@@ -32,6 +32,10 @@ describe 'Calculate when to poll for information: fixed, cron-like intervals.', 
         range = (_.range start, stop+1).map (delta) -> delta * 60
         (schedule.range start*60, stop*60).should.eql range
 
+    it 'can calculate all ticks within a certain range, using the window', ->
+        range = (_.range 0, 31).map (delta) -> delta * 60
+        schedule.range().should.eql range
+
     it 'can count the amount of ticks within a certain time range', ->
         start = timing.minutes 21
         stop = Infinity
@@ -49,7 +53,7 @@ describe 'Calculate when to poll for information: fixed, cron-like intervals.', 
     it 'can calculate when the schedule reaches n ticks', ->
         (schedule.reaches.count 20).should.eql timing.minutes 19
 
-    it 'can calculate when the schedule reaches a certain frequency', ->
+    it 'can calculate when the schedule reaches a certain frequency'
         # this is a fixed schedule and hence the degenerate case
         #(schedule.reaches.frequency 1/60).should.eql 0
 
@@ -58,18 +62,29 @@ describe 'Calculate when to poll for information: fixed, cron-like intervals.', 
 
 
 describe 'Calculate when to poll for information: reduced granularity over time.', ->
-    tick = timing.minutes 1
-    window = timing.minutes 30
-    decay = 5
+    tick = timing.hours 1
+    window = timing.days 7
+    decay = 2
     schedule = new timing.Schedule tick, window, decay
 
-    it 'can calculate the interval between one tick and the next at any point in time'
+    it 'can calculate the interval between one tick and the next at any point in time', ->
+        (schedule.interval timing.days 0).should.eql tick
+        (schedule.interval timing.days 7).should.eql tick * 64
 
-    it 'can calculate the tick frequency at any point in time'
+    it 'can calculate the tick frequency at any point in time', ->
+        (schedule.frequency timing.days 7).should.eql 1 / (tick * 64)
 
-    it 'can calculate all ticks within a certain range, starting from zero'
+    it 'can calculate all ticks within a certain range, starting from zero', ->
+        range = schedule.range window
+        count = range.length
+        stop = range.pop()
+        start = range.pop()
+        interval = stop - start
+        interval.should.eql schedule.interval start
+        (schedule.count window).should.eql count
 
-    it 'can calculate all ticks within a certain range'
+    it 'can calculate all ticks within a certain range', ->
+        #range = schedule.range window
 
     it 'can count the amount of ticks within a certain time range'
 
@@ -80,5 +95,5 @@ describe 'Calculate when to poll for information: reduced granularity over time.
     it 'can align ticks to fixed interval through linear interpolation'
         # timing.interpolate [...]
 
-    it 'can handle finite windows'
-        # finite windows shouldn't get us into endless loops etc.
+    it 'can calculate what the last tick will be', ->
+        #schedule.reaches.end().should.eql schedule.range window
