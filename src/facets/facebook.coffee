@@ -3,7 +3,7 @@ request = require 'request'
 _ = require 'underscore'
 
 class module.exports extends Facet
-    fetch: (url, callback) ->
+    poll: (url, callback) ->
         params =
             uri: 'https://graph.facebook.com/'
             qs:

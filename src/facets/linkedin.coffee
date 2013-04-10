@@ -2,7 +2,7 @@ request = require 'request'
 {CouldNotFetch, Facet} = require '../models'
 
 class module.exports extends Facet
-    fetch: (url, callback) ->
+    poll: (url, callback) ->
         params =
             uri: 'http://www.linkedin.com/countserv/count/share'
             qs:

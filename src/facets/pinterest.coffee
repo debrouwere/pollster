@@ -3,7 +3,7 @@ request = require 'request'
 utils = require '../utils'
 
 class module.exports extends Facet
-    fetch: (url, callback) ->
+    poll: (url, callback) ->
         params =
             uri: 'http://api.pinterest.com/v1/urls/count.json'
             qs:

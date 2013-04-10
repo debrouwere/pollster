@@ -2,7 +2,7 @@ request = require 'request'
 {CouldNotFetch, Facet} = require '../models'
 
 class module.exports extends Facet
-    fetch: (url, callback) ->
+    poll: (url, callback) ->
         # I'm cargo-culting a bit here -- I'm not sure which of these
         # parameters are strictly required.
         params =
