@@ -6,7 +6,7 @@ _ = require 'underscore'
 class module.exports extends Facet
     isProxy: yes
 
-    fetch: (url, callback) ->
+    poll: (url, callback) ->
         url = (parse url).pathname
 
         params =
