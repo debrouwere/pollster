@@ -12,7 +12,8 @@
     "hiredis": "0.1.x",
     "redis": "0.8.x",
     "sandbox": "0.8.x",
-    "aws-sdk": "0.9.x"
+    "aws-sdk": "0.9.x", 
+    "async": "0.2.x"
   },
   "devDependencies": {
     "should": ""
