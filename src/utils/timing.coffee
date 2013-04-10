@@ -83,7 +83,17 @@ class exports.Schedule
         @bounded delta, (1 / @interval delta)
 
     range: (deltas...) ->
-        if deltas.length is 1
+        if not deltas
+            stops = @window[1] isnt Infinity
+            decays = @decay
+            finite = stops or decay
+
+            if finite
+                [fromDelta, toDelta] = @window
+            else
+                throw new Error "Cannot compute an infinite range."
+
+        else if deltas.length is 1
             fromDelta = 0
             toDelta = deltas[0]
         else
