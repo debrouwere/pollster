@@ -1,0 +1,232 @@
+{
+    timestamp: n
+    url: str
+    tick: n # xth data point
+    normalizedTick: n # xth data point if not for exponential reduction of granularity
+    'facet:a': str
+    'facet:b': str
+}
+
+or with complex facets:
+
+{
+    'facet:a:x': any
+    'facet:a:y': any
+}
+
+We'll very often want to query on a timestamp range (e.g. last week, last month).
+We'll often want to query on `url` (an individual article)
+Tick is important to calculate aggregates, perhaps not as primary key to query on.
+
+Only (timestamp, url, facet, key) is unique, though (timestamp, url) can serve, 
+I suppose, with millisecond precision.
+
+Common queries: 
+
+- Everything for a facet for yesterday, with 5min ticks.
+  => 288 ticks * 3500 active articles at any time = 1M rows (300K if 15min)
+  => you'd want to generate running aggregates, because this is not feasible
+     outside of EMR.
+  => in many cases, you can update aggregates without needing to recalculate from scratch:
+     on tick 111, you can do (existingAggregate * 110 + currentValue)/111
+     (+ some additional bookkeeping if you want per-hour, per-day, per-week)
+- Everything for a url, with 1wk window, 5min ticks
+  => 2K rows (<2MB)
+  => (you could send polynomial curves over the wire so drastically cut down on transfer)
+
+We might have to do some serialization in some cases, e.g. for referrers:
+
+    ['<pageviews>\t<referrer>', ...]
+
+(We can easily extract pageviews with parseInt, and easily extract the referrer with split.)
+
+Items: 
+
+- facets * content * window/ticks
+  e.g. 5 facets, 10.000 articles/mo, 10.080 minutes (1 week), 5 minute ticks
+  = 100M values in the database per month
+  (DynamoDB is sparse, so you don't need key/value for every pair, 
+  it can just be one row and in fact we can store all facets in a row)
+  = 20M values
+
+Actual:
+
+ - Mercury promotions for a month (changes only, not state, but can be multiple at a time): 160K promos
+
+Splitting up the workload: 
+
+- hash URL to base16
+- responsibleInstance = parseInt(base, 16) % instances
+- if i == responsibleInstance ...
+- increase instances: spin up new instances with --workload 1/3 (2/3, 3/3)
+- spin down original instance (in between spinning up and spinning down
+  these instances may be doing some double work, but DynamoDB will just
+  overwrite those rows so it's not a big deal)
+- no point in building any automatic scaling: your load/io/bandwidth 
+  increases predictably with the amount of facets, amount of content/day,
+  ticks and window.
+
+#### Bandwidth and API limits
+
+If you publish 500 articles per day (the output of a big national newspaper) and track four facets, every 5 minutes, for 7 days after publication, that's 700 requests (polls) per minute or 12 per second.
+
+TODO: figure out what this means for performance requirements and also expected bandwidth
+
+---
+
+For The Guardian, we're probably talking about 
+- <$10 write costs
+- read costs dependent on what kinds of services / analytics it powers
+- 20GB/mo if we only store counts (not e.g. full tweets) and can keep a row under 1KB
+- 60GB/yr with decay, ($180 storage + IO costs)
+- since DynamoDB is columnar (albeit sparse) you could move old data to RedShift without too much hassle
+
+---
+
+Proxy caching: 
+
+- for a certain amount of time with EXPIRE
+- permanently / as long as there's memory
+  (some proxied data won't change, e.g. Content API tags, 
+  though I suppose indefinite caches are always a bit
+  dangerous, so perhaps we shouldn't allow this at all)
+  - basic implementation: long expire
+    e.g. 2.5M seconds = about a month
+  - alternative basic implementation: 
+    short expire (e.g. an hour, a day) but update
+    expire on access
+  - advanced implementation: separate Redis
+    database with maxmemory and maxmemory-policy=volatile-lru
+    (problem here would be that we might need
+    space in the queue database or for Node -- would Redis
+    or the OS be smart enough to properly allocate memory?)
+    (then again, at this point you'd probably be running poller
+    and API on different machines, so the point is moot)
+- do we need to avoid dogpiling? probably not that important
+
+---
+
+Queueing service: 
+
+- because polling intervals are dynamic (increase over time, and can be specific to the individual article or facet), we can't put all ticks in a queue ahead of time, and we can't just use a cron-esque regular schedule
+
+* settings table (hash table) *
+
+    url =>
+      publication_date
+      facets: {facet: {decay, window}}
+
+    (or columnized for Dynamo)
+    url => 
+        publication_date
+        <facet>-decay
+        <facet>-window
+
+    (or denormalized for Redis, though I'd have to think
+    the performance increase would be minor)
+    facet+url => publication_date | decay | window
+
+We should make sure that the settings table is not essential 
+for anything other than making queueing work, and is cleaned
+up when there's no remaining ticks left for a piece of content.
+Otherwise it will keep growing as the data set grows -- 
+which is what DynamoDB is for.
+
+(Calculated from global defaults, facet defaults and per-item overrides.)
+
+* queue table (sorted set) *
+
+    score => facet+url
+
+    - when a new URL gets added: 
+      add all its facets to the queue as well
+      with score 0 (= now)
+      ZADD 0 facet+url 0 facet+url 0 facet+url ...
+
+    - every second:
+      ZRANGE myzset 0 current_time
+    - add to `async.queue` with MAX_CONCURRENT requests
+      (this is *per facet/service*, Node itself will
+      take care the server doesn't take on more -- globally --
+      than it can handle)
+    - if facet successfully fetched and saved
+      - fetch settings[facet+url], compute next tick
+        (meaning "earliest tick in the future" -- 
+        if the service was interrupted and we've missed
+        ticks, so be it)
+      - update item score (next tick)
+        ZADD score facet+url [this is a set, so ZADD = update]
+
+(It should be possible to recalculate the queue table from scratch based on the DynamoDB settings data.)
+
+For the Guardian, if you have 135K articles at a time
+(about our yearly production, and with a tracking cut off
+after a year so it doesn't keep rising) that still 
+shouldn't be much more than 100MB in memory (incl. overhead)
+
+* stats table(s) *
+
+    (a) get every row for a daterange, split up by facet
+    (b) sorted set in Redis, ZINCR, clear out every hour/day
+    (c) count in Node, flush to Redis every minute, 
+        push to last-hour and last-day lists, and use 
+        ZTRIM to keep them 60 and 1440 elements long respectively
+
+---
+
+By default, Pollster keeps all data indefinitely. However, very fine-grained data is only
+useful for long-term analytics in very specific cases, it's mainly nice for live 
+dashboards and things of that sort. Pollster will never delete aggregates (hourly, daily, weekly)
+but you can ask it to delete the original data when older than x days.
+
+Or we could store data with decreasing granularity over time.
+
+    - exponential reduction in granularity
+    - fixed intervals (every tick on the first day, every 3*tick on the first week etc.)
+
+tick = 5 # minutes
+delta = 30 # xth day after public
+nextCheck = tick * delta
+
+For the first 52 weeks, the granularity (in hours) is like this: 
+
+DAY = 24 * 60 # minutes
+TICK = 5 # minutes
+RESOLUTION = 500
+BACK_OFF = 1.75
+# ticks every x days over time
+>>> ([(day-1)/7, Math.round((RESOLUTION * TICK * (Math.pow day, BACK_OFF)) / DAY) / RESOLUTION] for day in [1..365] by 7)
+On publication: 288 times a day
+One week: 7-8 times a day
+One month: under once a day
+One year: once every 105 days
+Two years: once every year
+
+Total data points in a year: 
+
+Total data points without back-off:
+
+>>> (DAY/TICK for day in [1..365])
+105120 data points
+
+>>> (DAY/(TICK * Math.pow(day, 1.75)) for day in [1..365]).reduce (a, b) -> a + b
+560.5544581660736 data points (288 on first day, 480 on first week)
+
+We'll need two options: 
+
+- stop tracking when we're tracking fewer than once per x days?
+  window: X_DAYS
+  window: until_ticks_per_day(1/365) # stop tracking when less than one tick per year
+
+- put a floor on tracking, e.g. back off, but never to less than once per x days
+  tick: [5, 24 * 60]
+  tick: [max, min]
+
+# calculate days/tick for a given day
+
+coffee> day = 365
+coffee> frequency = (TICK * (Math.pow day, BACK_OFF)) / DAY
+105.83273632587951
+
+# calculate on what day we'll reach a certain frequency
+on_day = (Math.pow frequency * DAY / TICK, 1/BACK_OFF)

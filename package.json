@@ -1,0 +1,27 @@
+{
+  "name": "pollster",
+  "version": "0.1.0",
+  "description": "Pollster helps you collect metadata about URLs at regular intervals. Track how content is being shared on Twitter and Facebook over time, figure out popular referrers, take a screenshot of your front page every five minutes, or really anything else you would want. Automatically track new content as you publish it. Pollster is an elaborate cron tool for tracking your content on the web.",
+  "main": "lib/server.js",
+  "dependencies": {
+    "commander": "1.x",
+    "mongodb": "1.x",
+    "request": "2.x",
+    "underscore": "1.x",
+    "express": "3.x",
+    "hiredis": "0.1.x",
+    "redis": "0.8.x",
+    "sandbox": "0.8.x",
+    "aws-sdk": "0.9.x"
+  },
+  "devDependencies": {
+    "should": ""
+    },
+  "scripts": {
+    "test": "mocha --compilers coffee:coffee-script"
+  },
+  "repository": "",
+  "author": "Stijn Debrouwere",
+  "license": "MIT",
+  "readmeFilename": "README"
+}

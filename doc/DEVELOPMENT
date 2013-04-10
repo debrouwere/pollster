@@ -1,0 +1,59 @@
+* Follow a feed to figure out when there's new stuff to track.
+* If you track social shares and other information for all your content indefinitely, the amount of polling requests you'll need to make will keep on growing, and the database will become unmanageable really fast. Various tactics to solve this, which we can use in tandem: 
+** tracking window: track for x days after publication
+** reduced granularity over time: track every n * days_since_publication^exp (think exponential backoff). With a tick every 5 minutes initially and an exponent of 1.75 (so not quite squared), you get 288 ticks on the first day, 7-8 times a day after a week, and about once every couple of months after a year. (In total you'd have about 600 ticks in the first year per piece of content. Very manageable.)
+** store various aggregates (daily, monthly etc.), so that regardless of the data size you never need to compute share totals from scratch whenever a client asks for them
+** Composite keys (url + timestamp) in AWS DynamoDB or MongoDB: querying all the data points for a certain URL in a certain time range, getting everything for a certain URL, or everything for a time range – the three most common queries – can be very fast.
+
+* Performance, bandwidth, storage
+** 135,000 articles per year, 600 ticks = 20M rows = ~60GB of data a year or so.
+** 135,000 articles per year, 600 ticks, 5 facets = 12 polling requests per second on average to an external service, or 2-3 per service per second. If that's more than what a particular API allows, it's easy to just poll every 10 or 15 minutes for that specific service instead of every 5.
+
+* Technology:
+** express.js framework in node.js, because it's async and fast, because everybody knows JavaScript but mostly because that's what I'm familiar with and can whip up something fast
+** REST API, no web interface in and of itself (similar to https://github.com/openNews/amo)
+** Centered around a "facet" class (the Facebook facet, Twitter facet etc.) that specifies what to poll (the actual web request), how often to poll it etc.
+The actual "getting the counts" part is already done, that's the `amo` tool we were toying with earlier.
+** With the Facet abstraction, we can handle a lot of things centrally: querying over the API, storage in the database, running the cron/schedule. This means facets can be really easy to build.
+** separate processes for polling and querying the data
+*** you could run the polling servers on AWS micros (more IPs so less likely to get throttled, and it's not very CPU-intensive anyway) but the querying server on a small or medium depending on cache requirements (amount of memory)
+** if there's ever a need to scale, it's easy to just hash the URL and run a modulo on it to decide which instance handles which polling requests. DB scalability can be outsourced to DynamoDB.
+
+---
+
+* pollster should work like a sort of domain-specific framework, where you can 
+pull in any of the default facets and views, but also easily add your own
+* the easiest set-up would be as easy as setting up an index.coffee where you 
+pull in some views and facets, define API keys and then just do `app.run()`
+* split out cron and server into two different processes (so you can add e.g. 
+new views without messing with the data collection)
+* MongoDB, express.js
+
+dev
+
+* first just get the basic GET API working
+* then persistence
+* then scheduling
+  (let specific PUTs override default ticks/windows)
+* then auto-tracking through feeds (RSS, ATOM or JSON)
+  -- arbitrary JSON could be supported by specifying
+  the root (`response.results`) and the URL location
+  within each element in that root (`webUrl`)
+
+  PUT /feeds/
+  {
+    location: feedloc
+    root: 'response.results'
+    element: 'webUrl'
+  }
+
+---
+
+Pony: triggers (webhook or fn) when certain values
+are reached. Like, if we're tracking pages, and a page changes, 
+alert somebody or start some kind of process.
+
+(Wouldn't even be that hard: while putting the value in the DB, 
+also check whether it matches any triggers. Triggers are 
+regular functions, by convention in the triggers/ directory, 
+that are registered against one or multiple facets.)

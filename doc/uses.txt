@@ -1,0 +1,35 @@
+Custom Pollster views
+
+* velocity: what content is trending on which social platform?
+  (volume + acceleration)
+  -- perhaps useful data for automatically generating trailblocks
+  or other features on the site (Zeitgeist)
+* performance relative to a tag, author, ... as well as time since publication
+  (either articles that conform to all of these, or different performance
+  indicators for each)
+
+Apps that build on Pollster
+
+* pollster-leaderboard
+  - top social (FB, Twitter, ...) but also pageviews etc.
+    for an arbitrary time range
+  - split by section, tag, etc.
+  - flexible facet system (determine what exactly counts
+    as a section, tag etc. in your setup)
+* pollster-dashboard
+  - with the same facet system as above, provide
+    at-a-glance information about all (recent) articles 
+    in a section, tag, or by a certain author
+    and how well they did as compared against the average
+    for the parent section / globally
+* pollster-archive
+  - archive any page and (optionally) keep polling
+    for changes
+
+Plus various one-off analyses
+
+* correlate social shares with in-site promotion
+* (with 7-day aggregates) what kinds of articles resonate more?
+* what percentage of articles get x% of shares past the first
+  couple of days (late bloomers and rediscovered content)
+* ...
