@@ -11,8 +11,13 @@ params =
             throw new Error "Need one or more URLs to fetch facets for."
 
     facets: (req) ->
-        if req.params.facet
-            _.object [[req.params.facet, req.app.facets[req.params.facet]]]
+        # the middleware route specifies the facet (if any) as an asterisk, 
+        # so it's not available under req.params.facet as it would be in a
+        # regular route
+        facet = req.params[0]?.replace '/', ''
+
+        if facet
+            _.object [[facet, req.app.facets[facet]]]
         else
             req.app.facets
 

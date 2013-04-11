@@ -29,6 +29,9 @@ class exports.Pollster
         for method, action of controller
             @app[method] endpoint, action
 
+    view: (endpoint, controller) ->
+        @app.get '/views' + endpoint, controller
+
     use: (facet, src) ->
         if src
             @app.facets[facet] = new (require src)()
@@ -42,12 +45,16 @@ class exports.Pollster
         @availableFacets = _.clone facets
         @app.facets = {}
 
-        @route '/facets/*', middleware.normalize
-        @route '/health/', controllers.health.health
-        @route '/queue/', controllers.health.queue
-        @route '/facets/', controllers.facets.list
-        @route '/facets/:facet/', controllers.facets.detail
-        @route '/feeds/', controllers.feeds
+        @app.use express.bodyParser()
+        @app.use express.methodOverride()
+        @app.use @app.router
+
+        @route '/facets*', middleware.normalize
+        @route '/health', controllers.health.health
+        @route '/queue', controllers.health.queue
+        @route '/facets', controllers.facets.list
+        @route '/facets/:facet', controllers.facets.detail
+        @route '/feeds', controllers.feeds
 
     listen: (port = 3000) ->
         @app.listen port
