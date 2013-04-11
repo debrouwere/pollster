@@ -48,10 +48,17 @@ class exports.Schedule
         if typeof @window is 'number'
             @window = [0, @window]
 
+        if typeof tick is 'number'
+            @tick = [tick, Infinity]
+        else
+            @tick = tick
+
         # give every function under the `reaches` 
         # namespace the proper `this` object
         namespace 'reaches', this
 
+    # `bounded` makes sure that ranges etc. respect
+    # the schedule's window
     bounded: (delta, output) ->
         if @window[0] <= delta <= @window[1]
             if output
@@ -61,13 +68,19 @@ class exports.Schedule
         else
             NaN
 
-    clip: (delta) ->
+    # return the nearest delta within the schedule's window
+    limit: (delta) ->
         if delta < @window[0]
             @window[0]
         else if delta > @window[1]
             @window[1]
         else
             delta
+
+    # clip an interval to it equals at most 
+    # the specified maximum tick interval
+    clip: (interval) ->
+        Math.min @tick[1], interval
 
     # an interval is the amount of seconds per tick at a certain delta
     interval: (delta) ->
@@ -76,14 +89,25 @@ class exports.Schedule
         else
             decay = 1
 
-        @bounded delta, (Math.round @tick * decay)
+        time = (Math.round @tick[0] * decay)
+        
+        @bounded delta, @clip time
 
     # a frequency is the amount of ticks per second at a certain delta
     frequency: (delta) ->
         @bounded delta, (1 / @interval delta)
 
+    # note: if you want a range not starting from 0 to be a true range
+    # you should use
+    # 
+    #     fromDelta = ...
+    #     toDelta = ...
+    #     fromDelta = @closest fromDelta
+    #     schedule.range fromDelta, toDelta
+    # 
+    # Otherwise your subset may not align with the full range.
     range: (deltas...) ->
-        if not deltas
+        if not deltas.length
             stops = @window[1] isnt Infinity
             decays = @decay
             finite = stops or decay
@@ -92,7 +116,6 @@ class exports.Schedule
                 [fromDelta, toDelta] = @window
             else
                 throw new Error "Cannot compute an infinite range."
-
         else if deltas.length is 1
             fromDelta = 0
             toDelta = deltas[0]
@@ -100,11 +123,10 @@ class exports.Schedule
             [fromDelta, toDelta] = deltas
 
         # limit fromDelta and toDelta to the window
-        fromDelta = @clip fromDelta
-        toDelta = @clip toDelta
+        fromDelta = @limit fromDelta
+        toDelta = @limit toDelta
 
-        firstTick = @tick * Math.ceil fromDelta/@tick
-        ticks = [firstTick]
+        ticks = [fromDelta]
         delta = fromDelta
 
         loop

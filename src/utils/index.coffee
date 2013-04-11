@@ -1,4 +1,5 @@
 exports.timing = require './timing'
+exports.interpolate = require './interpolate'
 exports.retry = (require './retry').retry
 exports.CouldNotFetch = (require './retry').CouldNotFetch
 
