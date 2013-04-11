@@ -14,6 +14,22 @@ utils = require '../utils'
 {Facet} = require './facet'
 
 
+# ConsoleHistory is useful during development
+class exports.ConsoleHistory
+    connect: (callback) -> callback null
+    create: (callback) -> callback null
+    read: (callback) ->
+        callback new Error "Cannot read from the console. Use a different backend."
+
+    write: (data, callback) ->
+        console.log data
+        if @buffer then @buffer.push data
+        callback null
+
+    constructor: (buffer = no) ->
+        if buffer then @buffer = []
+
+
 class exports.MongoDBHistory
     # create any tables, buckets and what-not
     connect: (callback) ->
@@ -64,7 +80,7 @@ class exports.DynamoDBHistory
         # { "accessKeyId": "akid", "secretAccessKey": "secret", "region": "us-west-2" }
 
 
-# TODO: add Redis queue
+
 class exports.MongoDBQueue
     connect: ->
 
@@ -83,23 +99,54 @@ class exports.MongoDBQueue
     constructor: (@location, @credentials) ->
 
 
+# TODO: add Redis queue
+class exports.RedisQueue
+
+
+# Not recommended but useful for development
+class exports.MemoryCache
+    ###
+
+
+    # FIFO cache
+    cache = (key, value) ->        
+    ###
+
+    connect: (callback) -> callback null
+    create: (callback) -> callback null
+
+    read: (key, callback) ->
+        callback null, @store[key]
+
+    write: (key, value, callback) ->
+        oldestKey = @keys.pop()
+        delete @store[oldestKey]
+        @keys.unshift key
+        @store[key] = value
+        callback null
+
+    update: (key, value, callback) ->
+        if key of @store
+            @store[key] = value
+            callback null
+        else
+            callback new Error "#{key} not in cache."
+
+    delete: (callback) ->
+        delete @store[key]
+        callback null
+
+    stat: (callback) ->
+        callback
+            size: @keys.length
+            items: (_.compact @keys).length
+
+    constructor: (@size) ->
+        @keys = new Array(@size)
+        @store = {}
+
 # TODO: add Redis cache
-class exports.MongoDBCache
-    connect: ->
-
-    create: ->
-
-    read: ->
-
-    write: ->
-
-    update: ->
-
-    delete: ->
-
-    stat: ->
-
-    constructor: (@location, @credentials) ->
+class exports.RedisCache
 
 
 class exports.FileBlobStorage
@@ -111,6 +158,7 @@ class exports.FileBlobStorage
     write: ->
 
     size: ->
+
 
 class exports.S3BlobStorage
     connect: ->
