@@ -32,6 +32,5 @@ describe 'Can align a timeseries with measurements at arbitrary times to a grid.
 
         # aligning a series that's already aligned doesn't mess it up
         (interpolate.align fixedSeries, 5).should.eql fixedSeries
-
-        result = (interpolate.align series, 5).map (kv) -> [kv[0], Math.round kv[1]]
-        result.should.eql interpolated
+        # align a series that's not aligned
+        (interpolate.align series, 5, 0).should.eql interpolated

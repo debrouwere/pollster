@@ -1,11 +1,20 @@
 last = (list) ->
     list[list.length-1]
 
+round = (value, decimals) ->
+    resolution = Math.pow 10, decimals
+    (Math.round value * resolution, 2) / resolution
+
 # interpolate between two points
-exports.interpolate = interpolate = (start, stop, x) ->
+exports.interpolate = interpolate = (start, stop, x, decimals) ->
     [x0, y0] = start
     [x1, y1] = stop
-    y0 + (y1 - y0) * ((x-x0)/(x1-x0))
+    y = y0 + (y1 - y0) * ((x-x0)/(x1-x0))
+
+    if decimals?
+        round y
+    else
+        y
 
 # Pollster usually polls for data less frequently as time goes on, 
 # but analysis of timeseries is considerably easier when you can
@@ -13,7 +22,7 @@ exports.interpolate = interpolate = (start, stop, x) ->
 # This function takes an irregular timeseries and aligns it to 
 # a grid, using real values where possible and interpolating 
 # where necessary.
-exports.align = (timeseries, interval) ->
+exports.align = (timeseries, interval, decimals) ->
     timestamps = timeseries.map (tuple) -> tuple[0]
     values = timeseries.map (tuple) -> tuple[1]
 
@@ -37,6 +46,7 @@ exports.align = (timeseries, interval) ->
             curr = Math.min pos, bound
             value = interpolate timeseries[prev], timeseries[curr], tick
         
+        if decimals? then value = round value, decimals
         grid[ix] = [tick, value]
 
     grid

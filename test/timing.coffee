@@ -36,6 +36,24 @@ describe 'Calculate when to poll for information: fixed, cron-like intervals.', 
         range = (_.range 0, 31).map (delta) -> delta * 60
         schedule.range().should.eql range
 
+    it 'can calculated aligned and offset ranges', ->
+        start = timing.minutes 1
+        stop = timing.minutes 30
+        (schedule.range start, stop).should.eql schedule.range()[1..]
+
+        # offset by 30 seconds
+        start = (timing.minutes 1) - 30
+        stop = (timing.minutes 30) - 30
+        offset = schedule.range start, stop
+        realigned = schedule.range()[1..].map (tick) -> tick - 30
+        offset.should.eql realigned
+
+        # offset by 15 seconds but realigned
+        alignedStart = timing.minutes 1
+        realignedStart = schedule.closest alignedStart + 15
+        stop = timing.minutes 30
+        (schedule.range alignedStart, stop).should.eql schedule.range realignedStart, stop
+
     it 'can count the amount of ticks within a certain time range', ->
         start = timing.minutes 21
         stop = Infinity
@@ -84,7 +102,10 @@ describe 'Calculate when to poll for information: reduced granularity over time.
         (schedule.count window).should.eql count
 
     it 'can calculate all ticks within a certain range', ->
-        #range = schedule.range window
+        fullRange = schedule.range()
+        last = (list) -> list[list.length-1]
+        range = schedule.range fullRange[5], last(fullRange)
+        range.should.eql fullRange[5..]
 
     it 'can count the amount of ticks within a certain time range'
 
@@ -95,5 +116,20 @@ describe 'Calculate when to poll for information: reduced granularity over time.
     it 'can align ticks to fixed interval through linear interpolation'
         # timing.interpolate [...]
 
-    it 'can calculate what the last tick will be', ->
+    it 'can calculate what the last tick will be'
         #schedule.reaches.end().should.eql schedule.range window
+
+    it 'can have a maximum interval', ->
+        clippedTick = [(timing.hours 1), (timing.hours 8)]
+        clippedSchedule = new timing.Schedule clippedTick, window, decay
+
+        # a schedule with a maximum interval should have more data points 
+        # than one where intervals keep growing indefinitely, at least 
+        # provided that the maximum interval is ever exceeded
+        schedule.range().length.should.be.below clippedSchedule.range().length
+
+        # test whether the maximum interval is respected
+        range = clippedSchedule.range()
+        range[1].should.eql clippedTick[0]
+        clippedInterval = range.pop() - range.pop()
+        clippedInterval.should.eql clippedTick[1]
