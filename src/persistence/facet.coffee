@@ -15,21 +15,15 @@ class exports.Facet
     # and as embedded documents in MongoDB it doesn't
     # make sense to fetch an individual facet.)
     pluck: (data, callback) ->
-
         # TODO: allow proxied content to be cached in Redis
-        # TODO: we'll almost always fetch a range, but 
-        # the question is whether we want to do that elsewhere
-        # or whether `get` serves simply as a filtering/enhancement
-        # mechanism (like now: it gets passed the data, it 
-        # doesn't fetch it)
         if @isProxy
             @fetch data.url, callback
         else
             facet = @name.toLowerCase()
             callback null, data[facet]
 
-    # similar to `get`, but only the latest value
-    latest: (data, callback) ->
+    # similar to `pluck`, but only the latest value
+    pluckLatest: (data, callback) ->
 
     # `@options` is a good place to put API keys and such
     constructor: (@options) ->

@@ -1,5 +1,5 @@
 request = require 'request'
-{CouldNotFetch, Facet} = require '../models'
+{CouldNotFetch, Facet} = require '../persistence'
 utils = require '../utils'
 
 class module.exports extends Facet

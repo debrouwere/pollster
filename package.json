@@ -16,7 +16,8 @@
     "async": "0.2.x"
   },
   "devDependencies": {
-    "should": ""
+    "should": "",
+    "supertest": ""
     },
   "scripts": {
     "test": "mocha --compilers coffee:coffee-script"

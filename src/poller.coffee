@@ -78,5 +78,11 @@ poller = ->
             if now % facet.tick is 0
                 db.add results.url, facet.update(result.url)
                 
+class exports.Poller
+    track: (url, options, callback) ->
+        console.log "Tracking #{url}"
+        if callback? then callback null
+
+    start: ->
 
 #setInterval main, 1000

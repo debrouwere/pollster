@@ -1,3 +1,5 @@
+# auto-track content in a feed
+
 module.exports =
     get: (req, res) ->
     

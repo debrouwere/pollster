@@ -12,12 +12,13 @@ TICK = exports.TICK = 5 * MINUTE
 DECAY = exports.DECAY = 1.7
 WINDOW = [0, YEAR]
 
-minutes = exports.minutes = (n) -> n * MINUTE
-hours = exports.hours = (n) -> n * HOUR
-days = exports.days = (n) -> n * DAY
-weeks = exports.weeks = (n) -> n * WEEK
-years = exports.years = (n) -> n * YEAR
-
+milliseconds = ms  = exports.milliseconds = exports.ms  = (n) -> n / 1000
+seconds      = sec = exports.seconds      = exports.sec = (n) -> n
+minutes      = min = exports.minutes      = exports.min = (n) -> n * MINUTE
+hours        = hrs = exports.hours        = exports.hrs = (n) -> n * HOUR
+days         = d   = exports.days         = exports.d   = (n) -> n * DAY
+weeks        = wks = exports.weeks        = exports.wks = (n) -> n * WEEK
+years        = yrs = exports.years        = exports.yrs = (n) -> n * YEAR
 
 # the time that has passed since `start`, in seconds
 exports.delta = (start) ->

@@ -176,5 +176,4 @@ shouldn't be much more than 100MB in memory (incl. overhead)
 
 By default, Pollster keeps all data indefinitely. However, very fine-grained data is only
 useful for long-term analytics in very specific cases, it's mainly nice for live 
-dashboards and things of that sort. Pollster will never delete aggregates (hourly, daily, weekly)
-but you can ask it to delete the original data when older than x days.
+dashboards and things of that sort. Pollster will never delete aggregates (hourly, daily, weekly) but you can ask it to delete the original data when older than x days.

@@ -6,6 +6,6 @@ pairs, you can figure out what trackbacks are legit
 ###
 
 request = require 'request'
-{CouldNotFetch, Facet} = require '../models'
+{CouldNotFetch, Facet} = require '../persistence'
 
 class module.exports extends Facet

@@ -25,6 +25,10 @@ Apps that build on Pollster
 * pollster-archive
   - archive any page and (optionally) keep polling
     for changes
+* pollster-link-scanner
+  - follow every link in a piece of content and archive those pages
+  - custom view that redirects to the original if it still
+    exists, or to the archived version if it doesn't anymore
 
 Plus various one-off analyses
 

@@ -14,7 +14,7 @@ params =
         # the middleware route specifies the facet (if any) as an asterisk, 
         # so it's not available under req.params.facet as it would be in a
         # regular route
-        facet = req.params[0]?.replace '/', ''
+        facet = req.params[0]?.replace /\//g, ''
 
         if facet
             _.object [[facet, req.app.facets[facet]]]

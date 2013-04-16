@@ -1,20 +1,3 @@
-###
-# ?url and ?detail parameters
-# also allow bulk with ?urls
-GET /
-# PUT works like GET, but also starts tracking the article
-PUT /
-GET /:facet/
-# when adding in facet data from an external source instead of our polling mechanism
-POST /:facet/
-# auto-track content in a feed
-GET, PUT, DELETE /feeds/
-# calculate the amount of API requests we'll be executing per minute for every facet, 
-# what errors we've gotten recently, and also what's currently in the queue
-GET /health/
-GET /queue/
-###
-
 fs = require 'fs'
 fs.path = require 'path'
 express = require 'express'
@@ -24,7 +7,11 @@ middleware = controllers.middleware
 facets = require './facets'
 poller = require './poller'
 
-class exports.Pollster
+
+# The core of Pollster is an expressjs application.
+# We're defining the REST API here, but keeping other
+# parts of Pollster in a subclass below: `exports.Pollster`
+class Server
     route: (endpoint, controller) ->
         for method, action of controller
             @app[method] endpoint, action
@@ -32,6 +19,31 @@ class exports.Pollster
     view: (endpoint, controller) ->
         @app.get '/views' + endpoint, controller
 
+    constructor: ->
+        @app = express()
+        @poller = new poller.Poller()
+
+        @app.enable 'strict routing'
+
+        @route '/facets*', middleware.normalize
+        @route '/health/', controllers.health.health
+        @route '/queue/', controllers.health.queue
+        @route '/facets/', controllers.facets.list
+        @route '/facets/:facet/', controllers.facets.detail
+        @route '/feeds/', controllers.feeds
+
+    listen: (port = 3000) ->
+        @app.listen port
+        console.log "Pollster listening on port #{port}."
+
+    start: (component='server', port=3000) ->
+        if component is 'poller'
+            @poller.start()
+        else
+            @listen port
+
+
+class exports.Pollster extends Server
     use: (facet, src) ->
         if src
             @app.facets[facet] = new (require src)()
@@ -41,28 +53,17 @@ class exports.Pollster
             else
                 throw new Error "Can't find #{facet}"
 
-    constructor: (@app = express()) ->
+    track: (url, options, callback) ->
+        @poller.track url, options, callback
+
+    listen: (port) ->
+        super port
+        facets = (_.keys @app.facets).join(', ')
+        console.log "Tracking #{facets}."
+
+    constructor: (app) ->
+        super app
+
+        @app.pollster = this
         @availableFacets = _.clone facets
         @app.facets = {}
-
-        @app.use express.bodyParser()
-        @app.use express.methodOverride()
-        @app.use @app.router
-
-        @route '/facets*', middleware.normalize
-        @route '/health', controllers.health.health
-        @route '/queue', controllers.health.queue
-        @route '/facets', controllers.facets.list
-        @route '/facets/:facet', controllers.facets.detail
-        @route '/feeds', controllers.feeds
-
-    listen: (port = 3000) ->
-        @app.listen port
-        facets = (_.keys @app.facets).join(', ')
-        console.log "Pollster listening on port #{port}. Tracking #{facets}."
-
-    start: (component='server', port=3000) ->
-        if component is 'poller'
-            poller.start()
-        else
-            @listen port

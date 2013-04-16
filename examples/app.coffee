@@ -1,8 +1,11 @@
-{Pollster} = require '../src'
+pollster = require '../src'
 
-pollster = new Pollster()
-pollster.use 'twitter'
-pollster.use 'facebook'
+#queue = pollster.backends.queue.MongoDB()
+#history = pollster.backends.history.MongoDB()
 
-pollster.start 'server', 3000
+app = new pollster.Pollster()
+app.use 'twitter'
+app.use 'facebook'
+
+app.start 'server', 3000
 #pollster.start 'poller'
