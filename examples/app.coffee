@@ -1,6 +1,6 @@
 pollster = require '../src'
 
-#queue = pollster.backends.queue.MongoDB()
+queue = pollster.backends.queue.MongoDB()
 #history = pollster.backends.history.MongoDB()
 
 app = new pollster.Pollster()

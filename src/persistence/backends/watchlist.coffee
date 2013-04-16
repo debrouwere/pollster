@@ -21,6 +21,10 @@ class exports.MongoDB extends WatchList
     # create any tables, buckets and what-not
     create: (callback) ->
 
+    getScheduleFor: (url, callback) ->
+
+    list: (callback) ->
+
     watch: (url, options, callback) ->
 
     unwatch: (url, callback) ->
@@ -31,6 +35,10 @@ class exports.DynamoDB extends WatchList
         @client = new AWS.DynamoDB().client
 
     create: (callback) ->
+
+    getScheduleFor: (url, callback) ->
+
+    list: (callback) ->
 
     watch: (url, options, callback) ->
 
