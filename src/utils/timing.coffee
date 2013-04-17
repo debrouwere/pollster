@@ -174,10 +174,6 @@ class exports.Schedule
                 (@range @window...).pop()
             else
                 NaN
-
-
-exports.interpolate = (ticks, frequency) ->
-    throw new Error "Not implemented yet"
         
 
 ###
