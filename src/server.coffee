@@ -19,9 +19,14 @@ class Server
     view: (endpoint, controller) ->
         @app.get '/views' + endpoint, controller
 
-    constructor: ->
+    constructor: (persistence) ->
+        # the queue and the watchlist need to be aware of each other
+        persistence.queue.watchlist = persistence.watchlist
+        persistence.watchlist.queue = persistence.queue
+        @persistence = persistence
+
         @app = express()
-        @poller = new poller.Poller()
+        @poller = new poller.Poller @persistence
 
         @app.enable 'strict routing'
 
@@ -61,8 +66,8 @@ class exports.Pollster extends Server
         facets = (_.keys @app.facets).join(', ')
         console.log "Tracking #{facets}."
 
-    constructor: (app) ->
-        super app
+    constructor: (persistence) ->
+        super persistence
 
         @app.pollster = this
         @availableFacets = _.clone facets

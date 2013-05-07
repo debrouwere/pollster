@@ -1,5 +1,6 @@
 fs = require 'fs'
 fs.path = require 'path'
+_ = require 'underscore'
 
 here = (segments...) -> fs.path.join __dirname, segments...
 
@@ -14,5 +15,4 @@ for facetPath in fs.readdirSync here './'
     facetName = fs.path.basename facetPath, extension
     facetFile = here './', facetPath
     handler = require facetFile
-    handler.name = facetName
-    facets[facetName] = new handler()
+    facets[facetName] = _.extend {name: facetName}, new handler()
