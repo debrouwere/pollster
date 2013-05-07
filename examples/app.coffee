@@ -1,9 +1,17 @@
 pollster = require '../src'
 
-queue = pollster.backends.queue.MongoDB()
-#history = pollster.backends.history.MongoDB()
+location =
+    ip: '127.0.0.1'
+    port: 27017
+    username: undefined
+    password: undefined
 
-app = new pollster.Pollster()
+backends =
+    watchlist: pollster.persistence.backends.watchlist.MongoDB location
+    queue: pollster.persistence.backends.queue.MongoDB location
+    history: pollster.backends.history.Console()
+
+app = new pollster.Pollster backends
 app.use 'twitter'
 app.use 'facebook'
 
