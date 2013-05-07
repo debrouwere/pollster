@@ -43,7 +43,7 @@ namespace = (name, dest) ->
         obj[key] = _.bind fn, dest
 
 class exports.Schedule
-    constructor: (@tick=TICK, @window=WINDOW, @decay=DECAY) ->
+    constructor: (tick=TICK, @window=WINDOW, @decay=DECAY) ->
         if not @window
             @window = [0, Infinity]
         if typeof @window is 'number'
@@ -144,12 +144,17 @@ class exports.Schedule
         # this is inefficient, but shouldn't be a huge deal
         (@range delta).pop()
 
-    next: (delta, align=no) ->
+    next: (delta, options={}) ->
+        options = _.defaults options, {align: no}
+
         # we can align the next tick to the regular schedule
         # or we can simply calculate what interval to add 
         # to whatever delta we start from
-        if align then delta = (@closest delta)
-        delta + @interval delta
+        if delta < 0
+            @window[0]
+        else
+            if options.align then delta = (@closest delta)
+            delta + @interval delta
 
     reaches:
         frequency: (hz) ->
@@ -174,14 +179,25 @@ class exports.Schedule
                 (@range @window...).pop()
             else
                 NaN
-        
 
-###
-- calculate all ticks (timestamps) for a given time range, 
-  or x ticks from a starting point
-- all ticks but as a simple count
-- time of next tick, given nth tick (or delta) and window and decay
-- calculate ticks/second for a given timestamp and piece of content
-- calculate seconds/tick for a given timestamp and piece of content
-- calculate timestamp the decay will reach a certain ticks/second frequency
-###
+
+# a calendar is a schedule with a start date
+# it deals with absolute dates, not deltas
+class exports.Calendar
+    constructor: (@schedule, @start=0) ->
+
+    next: (time, options) ->
+        time ?= exports.now()
+        delta = time - @start
+        (@schedule.next delta, options) + @start
+
+    range: (times...) ->
+        deltas = times.map (time) => time - @start
+        (@schedule.range deltas...).map (delta) => delta + @start
+
+
+exports.Calendar.create = (options) ->
+    {tick, window, decay, start} = options
+    start ?= exports.now()
+    schedule = new exports.Schedule tick, window, decay
+    new exports.Calendar schedule, start
