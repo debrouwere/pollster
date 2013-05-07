@@ -5,6 +5,8 @@ exports.serialize = require './serialize'
 exports.retry = (require './retry').retry
 exports.CouldNotFetch = (require './retry').CouldNotFetch
 
+_ = require 'underscore'
+
 # Some APIs return exclusively JSONP.
 # We strip out the padding and then treat it like regular JSON.
 exports.jsonp =
@@ -24,5 +26,12 @@ exports.split = (str, sep, times) ->
     if rest.length then rest = rest.join sep
     main.concat rest
 
+
+# with a function signature `(one, options..., two, three, etc)`
+# extract options from the resulting array; also apply defaults
+# if applicable
+exports.optional = (options, defaults={}) ->
+    if options.length then options[0] else {}
+    _.defaults options, defaults
 
 exports.noop = ->

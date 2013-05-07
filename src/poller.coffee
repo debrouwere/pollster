@@ -30,7 +30,7 @@ class exports.Poller
             persistence.queue.pop (err, definitions) ->
                 if err then return callback err
                 console.log "[POLLER] popped #{definitions.length} task(s) from the queue"
-                fetch definitions, persistence.history, callback
+                fetch definitions, persistence, callback
 
     start: (callback) ->
         poller = this

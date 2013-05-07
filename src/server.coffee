@@ -51,7 +51,8 @@ class Server
 class exports.Pollster extends Server
     use: (facet, src) ->
         if src
-            @app.facets[facet] = new (require src)()
+            instance = _.extend {name: facet}, new (require src)()
+            @app.facets[facet] = instance
         else
             if facet of @availableFacets
                 @app.facets[facet] = @availableFacets[facet]
