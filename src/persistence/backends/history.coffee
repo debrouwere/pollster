@@ -10,6 +10,7 @@ redis = require 'redis'
 AWS = require 'aws-sdk'
 
 _ = require 'underscore'
+engines = require '../engines'
 utils = require '../../utils'
 {Facet} = require '../facet'
 
@@ -18,6 +19,11 @@ pluck = (row, facets) ->
     for name of facets
         data[name] = facets[name].pluck row
     data
+
+row = (url, facet, timestamp, data) ->
+    object = {url, timestamp}
+    object[facet] = data
+    object
 
 class History
     constructor: (@location, @credentials, @facets) ->
@@ -32,15 +38,22 @@ class History
             return callback err if err
             callback err, results.map (result) -> pluck result, facets
 
+
 # ConsoleHistory is useful during development
 class exports.Console extends History
     connect: (callback) -> callback null
 
     create: (callback) -> callback null
 
-    put: (data, callback) ->
-        console.log data
-        if @buffer then @buffer.push data
+    put: (url, facet, timestamp, data, callback) ->
+        if @level in [0, 2]
+            # converting the data object into something that is more easily
+            # readable on the command line
+            values = _.flatten _.pairs utils.serialize.deflate row url, facet, timestamp, data
+            console.log "[HISTORY]", values...
+        if @level in [1, 2]
+            @buffer.push row url, facet, timestamp, data
+
         callback null
 
     get: (id, callback) ->
@@ -48,25 +61,31 @@ class exports.Console extends History
 
     query: (filter, callback) ->
 
-    constructor: (buffer, credentials, @facets) ->
-        if buffer then @buffer = []
+    # 0: output to console
+    # 1: output to buffer
+    # 2: output to both
+    constructor: (@level = 0, credentials, @facets) ->
+        if level > 0 then @buffer = []
 
 
 class exports.MongoDB extends History
     # create any tables, buckets and what-not
     connect: (callback) ->
-        dbManager = new Server '127.0.0.1', 27017, {}
-        dbClient = new mongodb.Db 'pollster', dbManager, {w: 1}
-        dbClient.open (err, pClient) ->
+        engines.MongoDB.collection 'queue', (err, @collection, @client) =>
+            callback err
 
     create: (callback) ->
-        client.collection 'testCollection', (err, collection) ->
+        @collection.ensureIndex {timestamp: -1, url: 1}, callback
 
-    put: (data, callback) ->
+    put: (url, facet, timestamp, data, callback) ->
+        object = row url, facet, timestamp, data
+        @collection.insert object, options, callback
 
-    get: (id, callback) ->
+    get: (_id, callback) ->
+        @collection.findOne {_id}, callback
 
     query: (filter, callback) ->
+        (@collection.find filter).toArray callback
 
     stat: (callback) ->
 

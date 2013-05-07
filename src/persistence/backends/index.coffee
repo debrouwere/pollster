@@ -1,4 +1,4 @@
-module.exports = 
+module.exports =
     blob: require './blob'
     cache: require './cache'
     history: require './history'

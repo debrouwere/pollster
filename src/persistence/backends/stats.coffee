@@ -7,6 +7,17 @@ utils = require '../../utils'
 {Facet} = require '../facet'
 
 
+###
+* stats table(s) *
+
+    (a) get every row for a daterange, split up by facet
+    (b) sorted set in Redis, ZINCR, clear out every hour/day
+    (c) count in Node, flush to Redis every minute, 
+        push to last-hour and last-day lists, and use 
+        ZTRIM to keep them 60 and 1440 elements long respectively
+###
+
+
 class Stats
 
 
