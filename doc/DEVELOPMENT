@@ -57,3 +57,8 @@ alert somebody or start some kind of process.
 also check whether it matches any triggers. Triggers are 
 regular functions, by convention in the triggers/ directory, 
 that are registered against one or multiple facets.)
+
+---
+
+It should also be possible to do raw queries on the database, which is the 
+only way to do certain kinds of analyses.
