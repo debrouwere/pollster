@@ -133,3 +133,17 @@ describe 'Calculate when to poll for information: reduced granularity over time.
         range[1].should.eql clippedTick[0]
         clippedInterval = range.pop() - range.pop()
         clippedInterval.should.eql clippedTick[1]
+
+
+describe 'it can work with calendars: schedules that start at a specific point in time', ->
+    it 'can calculate a range of ticks'
+    (done) ->
+        s = new timing.Schedule()
+        c = new timing.Calendar(s)
+        c.start = timing.minutes 5
+        s.next timing.days 5
+        c.next timing.days 5
+        s.range()[..5]
+        c.range()[..5]
+
+    it 'can calculate the next tick from a starting point'
