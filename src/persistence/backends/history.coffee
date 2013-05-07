@@ -60,6 +60,7 @@ class exports.Console extends History
         callback new Error "Cannot read from the console. Use a different backend."
 
     query: (filter, callback) ->
+        callback new Error "Cannot read from the console. Use a different backend."
 
     # 0: output to console
     # 1: output to buffer
