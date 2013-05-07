@@ -1,2 +1,2 @@
 should = require 'should'
-backends = require '../src/models/backends'
+backends = require '../src/persistence/backends'
