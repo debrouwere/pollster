@@ -20,7 +20,7 @@
     "supertest": ""
     },
   "scripts": {
-    "test": "mocha --compilers coffee:coffee-script"
+    "test": "make test"
   },
   "repository": "",
   "author": "Stijn Debrouwere",
