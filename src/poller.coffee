@@ -7,6 +7,7 @@ timing = utils.timing
 class exports.Poller
     constructor: (@persistence) ->
         @connected = no
+        @busy = no
 
     connect: (callback) ->
         backends = (_.values @persistence)
@@ -23,11 +24,17 @@ class exports.Poller
     poll: (callback=utils.noop) ->
         {persistence} = this
 
+        if @busy
+            return callback null
+        else
+            @busy = yes
+
         if @onStop?
             clearInterval @iid
             @onStop()
         else
-            persistence.queue.pop (err, definitions) ->
+            persistence.queue.pop (err, definitions) =>
+                @busy = no
                 if err then return callback err
                 console.log "[POLLER] popped #{definitions.length} task(s) from the queue"
                 fetch definitions, persistence, callback

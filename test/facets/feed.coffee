@@ -1,5 +1,5 @@
 should = require 'should'
-{track, timing} = utils
+{track, timing} = require '../../src/utils'
 
 
 describe 'Feed-driven watchlists.', ->

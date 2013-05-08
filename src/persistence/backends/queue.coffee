@@ -71,10 +71,7 @@ class exports.MongoDB extends Queue
         now = utils.timing.now()
         query = {timestamp: {$lte: now}}
         (@collection.find query).toArray (err, documents) ->
-            # remove these tasks from the queue and create new ones
-            keys = _.pluck documents, 'facet+url'
-            async.each keys, next
-
+            if err then return callback err            
             tasks = documents.map (doc) ->
                 [facetName, url] = utils.split doc['facet+url'], '+', 1
                 facet = facets[facetName]
@@ -84,7 +81,12 @@ class exports.MongoDB extends Queue
                     done err
                 {url, facet, notify}
 
-            callback err, tasks
+            # remove these tasks from the queue and create new ones
+            # before handing things off -- this avoids polling keys
+            # twice
+            keys = _.pluck documents, 'facet+url'
+            async.each keys, next, (err) ->
+                callback err, tasks
 
     push: (url, facet, timestamp, callback) ->
         key = "#{facet}+#{url}"

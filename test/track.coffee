@@ -5,19 +5,16 @@ engines = pollster.persistence.engines
 # so we're requiring this separately
 db = require '../src/persistence/backends'
 utils = require '../src/utils'
+settings = require './settings'
+async = require 'async'
 {track, timing} = utils
 
 
 describe 'Add, update and remove pages from the polling queue.', ->
-    location =
-        name: 'application-test'
-        host: '127.0.0.1'
-        port: 27017
-
     backends =
-        watchlist: new db.watchlist.MongoDB location
-        queue: new db.queue.MongoDB location
-        history: new db.history.Console 1
+        watchlist: settings.watchlist.MongoDB
+        queue: settings.queue.MongoDB
+        history: settings.history.Console
 
     url = 'http://example.org'
     options = 
@@ -33,9 +30,9 @@ describe 'Add, update and remove pages from the polling queue.', ->
     app = application.app
 
     beforeEach (done) ->
+        # hm, settings.clear.mongodb doesn't always work
         backends.history.buffer = []
-        engines.MongoDB.connect location, (err, client) ->
-            client.dropDatabase done
+        async.parallel [settings.clear.console, settings.clear.mongodb], done
 
     it 'can connect the poller to all the various database backends', (done) ->
         application.poller.connected.should.be.false
@@ -101,7 +98,10 @@ describe 'Add, update and remove pages from the polling queue.', ->
         interval = 10
         ticks = [0, 10, 20, 30].map timing.seconds
 
+        console.log 'QUERULANT.', application.persistence.history.buffer
+
         afterTicks = ->
+            console.log application.persistence.history.buffer
             n = options.facets.length
             buffer = application.persistence.history.buffer
             buffer.length.should.equal ticks.length * n

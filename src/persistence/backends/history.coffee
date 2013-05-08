@@ -72,7 +72,7 @@ class exports.Console extends History
 class exports.MongoDB extends History
     # create any tables, buckets and what-not
     connect: (callback) ->
-        engines.MongoDB.collection 'queue', (err, @collection, @client) =>
+        engines.MongoDB.collection @location, 'history', (err, @collection, @client) =>
             callback err
 
     create: (callback) ->
@@ -80,7 +80,7 @@ class exports.MongoDB extends History
 
     put: (url, facet, timestamp, data, callback) ->
         object = row url, facet, timestamp, data
-        @collection.insert object, options, callback
+        @collection.insert object, callback
 
     get: (_id, callback) ->
         @collection.findOne {_id}, callback

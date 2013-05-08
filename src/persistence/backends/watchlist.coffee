@@ -30,22 +30,15 @@ which is what DynamoDB is for.
 ###
 
 
-class WatchList
-    constructor: (@location, @queue) ->
-
-# DEPRECATED
-toCalendars = (results, facets=[]) ->
-    calendars = {}
-    for facet, options of results
-        # toCalendars can return all calendars or a subset
-        if facets.length and facet not in facets then continue
-        calendars[facet] = utils.timing.Calendar.create options
-    calendars
-
 # different calendars can share the same options, but it's
 # useful to have them split out per facet too
 untangle = (result) ->
     result.facets.map (facet) -> _.extend {facet}, result
+
+
+class WatchList
+    constructor: (@location, @queue) ->
+
 
 class exports.MongoDB extends WatchList
     connect: (callback) ->
@@ -55,22 +48,24 @@ class exports.MongoDB extends WatchList
     create: (callback) ->
         @collection.ensureIndex 'url', callback
 
-    getCalendarsFor: (url, callback) ->
-        (@collection.find {url}).toArray (err, results) ->
-            parameters = _.flatten results.map untangle
-            calendars = parameters.map (params) -> 
-                [params.facet, utils.timing.Calendar.create params]
+    _buildCalendarsFor: (results) ->
+        parameters = _.flatten results.map untangle
+        calendars = parameters.map (params) -> 
+            [params.facet, utils.timing.Calendar.create params]        
+        _.object calendars
 
+    getCalendarsFor: (url, callback) ->
+        (@collection.find {url}).toArray (err, results) =>
             if err
                 callback err
             else
-                callback null, _.object calendars
+                callback null, @_buildCalendarsFor results
 
     list: (callback) ->
-        @collection.find().toArray (err, results) ->
-            calendars = {}
-            for result in results
-                calendars[result.url] = toCalendars result
+        @collection.find().toArray (err, results) =>
+            calendars = _.groupBy results, 'url'
+            for url, parameters of calendars
+                calendars[url] = @_buildCalendarsFor parameters
             callback err, calendars
 
     watch: (url, options, callback) ->
