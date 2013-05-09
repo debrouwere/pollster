@@ -1,5 +1,5 @@
 should = require 'should'
-{track, timing} = require '../../src/utils'
+{traverse, timing} = require '../../src/utils'
 
 
 describe 'Feed-driven watchlists.', ->
@@ -18,8 +18,14 @@ describe 'Feed-driven watchlists.', ->
         
         root = 'root.articles'
         path = 'article.url'
-        extractedUrls = track.pluck feed, root, path
+        extractedUrls = traverse.pluck feed, root, path
         extractedUrls.should.eql urls
+
+        root = undefined
+        path = undefined
+        extractedArticles = traverse.pluck feed.root.articles, root, path
+        for article in extractedArticles
+            article.article.url.should.be.a 'string'
 
     it 'should be able to extract URLs from an ATOM feed'
 

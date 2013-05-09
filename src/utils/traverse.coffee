@@ -1,5 +1,7 @@
-exports.traverse = traverse = (obj, path) ->
-    for segment in path.split '.'
+_ = require 'underscore'
+
+exports.traverse = traverse = (obj, path='') ->
+    for segment in _.compact path.split '.'
         obj = obj[segment]
     obj
 

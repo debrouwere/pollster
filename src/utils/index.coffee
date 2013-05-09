@@ -1,6 +1,6 @@
 exports.timing = require './timing'
 exports.interpolate = require './interpolate'
-exports.track = require './track'
+exports.traverse = require './traverse'
 exports.serialize = require './serialize'
 exports.retry = (require './retry').retry
 exports.CouldNotFetch = (require './retry').CouldNotFetch
