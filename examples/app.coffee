@@ -7,13 +7,23 @@ location =
     password: undefined
 
 backends =
-    watchlist: pollster.persistence.backends.watchlist.MongoDB location
-    queue: pollster.persistence.backends.queue.MongoDB location
-    history: pollster.backends.history.Console()
+    watchlist: new pollster.persistence.backends.watchlist.MongoDB location
+    queue: new pollster.persistence.backends.queue.MongoDB location
+    history: new pollster.persistence.backends.history.MongoDB location
 
 app = new pollster.Pollster backends
 app.use 'twitter'
 app.use 'facebook'
 
-app.start 'server', 3000
+watchlist = 'http://content.guardianapis.com/search?page-size=50&format=json'
+options =
+    facets: ['file']
+    root: 'results'
+    unique: 'webUrl'
+    multiple: yes
+    watchlist: yes
+    parse: yes
+
+app.track watchlist, options
+app.start 3000
 #pollster.start 'poller'
