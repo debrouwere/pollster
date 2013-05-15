@@ -26,20 +26,24 @@ class exports.Facet
     pluckLatest: (data, callback) ->
 
     # `@options` is a good place to put API keys and such
-    constructor: (@options) ->
+    constructor: (@options={}) ->
         # external APIs can be a bit flaky, so we don't 
         # give up right away
-        poll = _.bind @poll, this
+        poll = @poll.bind this
         @poll = utils.retry poll, 5
 
+    extend: (options={}) ->
+        options = _.defaults options, @options
+        _.extend {@name}, new @constructor options
+
     # fetch fn
-    poll: (url, callback) ->
+    poll: (url, options..., callback) ->
         # should also be able to return `null` if nothing
         # should be stored
         # (for most facets, data that stays the same
         # should still be captured, for others, e.g. 
         # a page archive, it should not)
-        callback null, {a: 'data-structure'}
+        callback new Error "Not implemented yet for this Facet type."
 
     # aggregate (fn that aggregates the data from each individual tick)
     # (we will call this a couple of times with different data: once  

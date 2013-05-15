@@ -29,24 +29,29 @@ exports.poll = poll =
 
 exports.process = process =
     # fetch, persist, call back
-    task: (definition, options..., callback) ->
-        options = utils.optional options
-        # each task comes with a callback to call once complete, 
+    task: (definition, callback) ->
+        # each task comes with a callback (`notify`) to call once complete, 
         # which will remove the task from the queue
+        options = definition.facet.options
         {url, facet, notify, destination, watchlist} = definition
         timestamp = utils.timing.now()
-        facet.poll url, (err, data) ->
+        facet.poll url, options, (err, data) ->
             if err then return callback err
             if not data then return callback null
 
-            # feeds can serve as a watchlist source
-            # TODO: actually pass through facet-specific options
-            options = {}
-            if facet.name is 'feed' and options.watchlist
-                watchlist.watch 'TODO'
-            else
-                destination.put url, facet.name, timestamp, data, (err) ->
-                    notify err, callback
+            if options.watchlist
+                console.log "Processing #{url} as a watchlist", options
+                uris = utils.traverse.pluck data, options.root, options.path
+                # feeds will often contain older items we're already tracking, 
+                # and {replace: no} tells the watchlist that it shouldn't 
+                # change any of the parameters for those uris already in
+                # the system
+                watch = (uri, done) ->
+                    watchlist.watch uri, {options: {replace: no}}, done
+                async.each uris, watch, utils.noop
+
+            destination.put url, facet.name, timestamp, data, (err) ->
+                notify err, callback
 
     tasks: (definitions, backends, callback) ->
         # as above, we process different facets in parallel, but only 

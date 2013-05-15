@@ -37,7 +37,7 @@ untangle = (result) ->
 
 
 class WatchList
-    constructor: (@location, @queue) ->
+    constructor: (@location, @defaults={}) ->
 
 
 class exports.MongoDB extends WatchList
@@ -61,6 +61,12 @@ class exports.MongoDB extends WatchList
             else
                 callback null, @_buildCalendarsFor results
 
+    get: (url, callback) ->
+        @collection.findOne {url}, (err, result) =>
+            if err then callback err
+            result.calendars = @_buildCalendarsFor [result]
+            callback null, result
+
     list: (callback) ->
         @collection.find().toArray (err, results) =>
             calendars = _.groupBy results, 'url'
@@ -68,14 +74,21 @@ class exports.MongoDB extends WatchList
                 calendars[url] = @_buildCalendarsFor parameters
             callback err, calendars
 
-    watch: (url, options, callback) ->
-        item = _.extend options, {url}
-        calendar = utils.timing.Calendar.create options
+    watch: (url, parameters, callback) ->
+        item = _.extend {url}, @defaults, parameters
+        # in some cases we don't want to replace existing calendars
+        # when the URL is already in the system; we can do this with
+        # the `replace: no` option
+        calendar = utils.timing.Calendar.create parameters
         nextTick = calendar.next -1
         enqueue = (facet, done) => @queue.push url, facet, nextTick, done
 
-        @collection.update {url}, item, {safe: yes, upsert: yes}, (err) ->
-            async.each item.facets, enqueue, callback
+        @collection.findOne {url}, (err, found) =>
+            if found and not (parameters.replace and found.options.replace)
+                callback null
+            else
+                @collection.update {url}, item, {safe: yes, upsert: yes}, (err) ->
+                    async.each item.facets, enqueue, callback
 
     unwatch: (url, callback) ->
         @collection.remove {url}, callback

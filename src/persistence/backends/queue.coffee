@@ -20,18 +20,17 @@ class Queue
         noop = ->
         retry = =>
             console.log "[RETRY] [#{timestamp}] #{url} #{facet} "
-            self.push url, facet, timestamp, noop
+            @push url, facet, timestamp, noop
         setTimeout retry, 90 * 1000
 
     rebuild: (callback) ->
-        console.log 'REBUILDING'
+        console.log '[REBUILDING WATCHLIST]'
         unpack = @unpack.bind this
 
         @watchlist.list (err, list) =>
-            console.log 'watchlist', list
             flattenedWatchList = []
-            for url, facets of list
-                for facet, calendar of facets
+            for url, relatedFacets of list
+                for facet, calendar of relatedFacets
                     next = calendar.next align: yes
                     if next then flattenedWatchList.push {url, facet, next}
 
@@ -53,40 +52,49 @@ class exports.MongoDB extends Queue
         [facet, url] = key.split '+'
         callback ?= ->
 
-        @watchlist.getCalendarsFor url, (err, calendars) ->
+        self.watchlist.getCalendarsFor url, (err, calendars) =>
             calendar = calendars[facet]
-            self.collection.remove {'facet+url': key}, (err) ->
+            self.collection.remove {'facet+url': key}, (err) =>
                 timestamp = calendar.next()
                 if timestamp
                     self.push url, facet, timestamp, callback
                 else
                     callback null
 
+    inflate: (doc, callback) ->
+        recover = @recover.bind this
+
+        [facetName, url] = utils.split doc['facet+url'], '+', 1
+        facet = facets[facetName]
+        retryId = recover url, facetName, doc['timestamp']
+        @watchlist.get url, (err, configuration) ->
+            if err then callback err
+
+            notify = (err, done=utils.noop) ->
+                clearTimeout retryId
+                done err
+
+            facet = facet.extend configuration.options
+            callback null, {url, facet, notify}
+
     pop: (callback) ->
         # once the caller has finished with whatever it has popped off
         # the queue, it should call `success` so we can do the necessary
         # cleanup on this end
         next = @next.bind this
-        recover = @recover.bind this
+        inflate = @inflate.bind this
         now = utils.timing.now()
         query = {timestamp: {$lte: now}}
-        (@collection.find query).toArray (err, documents) ->
-            if err then return callback err            
-            tasks = documents.map (doc) ->
-                [facetName, url] = utils.split doc['facet+url'], '+', 1
-                facet = facets[facetName]
-                retryId = recover url, facetName, doc['timestamp']
-                notify = (err, done=utils.noop) ->
-                    clearTimeout retryId
-                    done err
-                {url, facet, notify}
 
-            # remove these tasks from the queue and create new ones
-            # before handing things off -- this avoids polling keys
-            # twice
-            keys = _.pluck documents, 'facet+url'
-            async.each keys, next, (err) ->
-                callback err, tasks
+        (@collection.find query).toArray (err, documents) =>
+            if err then return callback err            
+            async.map documents, inflate, (err, tasks) ->
+                # remove these tasks from the queue and create new ones
+                # before handing things off -- this avoids polling keys
+                # twice
+                keys = _.pluck documents, 'facet+url'
+                async.each keys, next, (err) ->
+                    callback err, tasks
 
     push: (url, facet, timestamp, callback) ->
         key = "#{facet}+#{url}"
@@ -94,7 +102,7 @@ class exports.MongoDB extends Queue
             'facet+url': key
             'timestamp': timestamp
 
-        console.log "[QUEUE] [#{item.timestamp}] #{key}"
+        console.log "[SCHEDULE] [#{item.timestamp}] #{key}"
         @collection.update {'facet+url': key}, item, {safe: yes, upsert: yes}, callback
 
 # TODO: add Redis queue

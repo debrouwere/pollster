@@ -27,11 +27,15 @@ exports.split = (str, sep, times) ->
     main.concat rest
 
 
+exports.last = (arr) ->
+    arr[arr.length-1]
+
+
 # with a function signature `(one, options..., two, three, etc)`
 # extract options from the resulting array; also apply defaults
 # if applicable
 exports.optional = (options, defaults={}) ->
-    if options.length then options[0] else {}
+    options = if options.length then options[0] else {}
     _.defaults options, defaults
 
 exports.noop = ->

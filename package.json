@@ -13,7 +13,8 @@
     "redis": "0.8.x",
     "sandbox": "0.8.x",
     "aws-sdk": "0.9.x", 
-    "async": "0.2.x"
+    "async": "0.2.x",
+    "feedparser": "0.15.x"
   },
   "devDependencies": {
     "should": "",

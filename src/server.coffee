@@ -6,6 +6,7 @@ controllers = require './controllers'
 middleware = controllers.middleware
 facets = require './facets'
 poller = require './poller'
+utils = require './utils'
 
 
 # The core of Pollster is an expressjs application.
@@ -41,35 +42,56 @@ class Server
         @app.listen port
         console.log "Pollster listening on port #{port}."
 
-    start: (component='server', port=3000) ->
-        if component is 'poller'
-            @poller.start()
-        else
-            @listen port
+    start: (component..., port=3000, callback=utils.noop) ->
+        component = if component.length then component else null
+        all = not component
 
+        if all or component is 'server'
+            @listen port
+        if all or component is 'poller'
+            @poller.start callback
 
 class exports.Pollster extends Server
+    _use: (facetName, instance) ->
+        @app.facets[facetName] = instance
+        @configuration.facets = _.uniq @configuration.facets.concat facetName 
+
     use: (facet, src) ->
         if src
             instance = _.extend {name: facet}, new (require src)()
-            @app.facets[facet] = instance
+            @_use facet, instance
         else
             if facet of @availableFacets
-                @app.facets[facet] = @availableFacets[facet]
+                @_use facet, @availableFacets[facet]
             else
                 throw new Error "Can't find #{facet}"
 
-    track: (url, options, callback) ->
-        @poller.track url, options, callback
+    configure: (key, value) ->
+        @configuration[key] = value
+
+    track: (url, parameters, callback) ->
+        # parameters determine exactly how to track things, 
+        # options enable or disable certain special features
+        # we can do with the results from our tracking
+        parameters = _.defaults parameters, @parameters
+        @poller.track url, parameters, callback
 
     listen: (port) ->
         super port
         facets = (_.keys @app.facets).join(', ')
         console.log "Tracking #{facets}."
 
-    constructor: (persistence) ->
+    constructor: (persistence, configuration={}) ->
         super persistence
 
         @app.pollster = this
         @availableFacets = _.clone facets
         @app.facets = {}
+
+        @configuration = _.defaults configuration, 
+            facets: []
+            window: [0, (utils.timing.years 1)]
+            tick: [(utils.timing.minutes 5), (utils.timing.weeks 1)]
+            decay: 1.7
+            options:
+                replace: yes

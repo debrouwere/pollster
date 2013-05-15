@@ -17,9 +17,9 @@ class exports.Poller
             @connected = yes
             callback err
 
-    track: (url, options, callback) ->
+    track: (url, parameters, callback) ->
         console.log "[POLLER] Now tracking #{url}"
-        @persistence.watchlist.watch url, options, (callback or ->)
+        @persistence.watchlist.watch url, parameters, (callback or utils.noop)
 
     poll: (callback=utils.noop) ->
         {persistence} = this

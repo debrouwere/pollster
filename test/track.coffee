@@ -40,7 +40,7 @@ describe 'Add, update and remove pages from the polling queue.', ->
             application.poller.connected.should.be.true
             done()
 
-    it 'can add a URL to the watchlist programatically', (done) ->
+    it 'can add a URL to the watchlist programmatically', (done) ->
         # normally you'd just do application.start(), but we want 
         # to isolate certain parts so we're testing units rather
         # than the entire app
@@ -97,8 +97,6 @@ describe 'Add, update and remove pages from the polling queue.', ->
         now = timing.now()
         interval = 10
         ticks = [0, 10, 20, 30].map timing.seconds
-
-        console.log 'QUERULANT.', application.persistence.history.buffer
 
         afterTicks = ->
             console.log application.persistence.history.buffer

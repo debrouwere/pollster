@@ -60,7 +60,14 @@ class exports.Console extends History
         callback new Error "Cannot read from the console. Use a different backend."
 
     query: (filter, callback) ->
-        callback new Error "Cannot read from the console. Use a different backend."
+        if not @buffer
+            callback new Error "Cannot read from an unbuffered console. Use a different backend."
+
+    # get the last row from the database, 
+    # optionally limited to a url and a facet
+    last: (filter..., callback) ->
+        filter = utils.optional filter
+        callback null, _.findWhere @buffer.reverse(), filter
 
     # 0: output to console
     # 1: output to buffer
@@ -80,6 +87,8 @@ class exports.MongoDB extends History
 
     put: (url, facet, timestamp, data, callback) ->
         object = row url, facet, timestamp, data
+        values = _.flatten _.pairs utils.serialize.deflate object
+        console.log "[HISTORY]", values...
         @collection.insert object, callback
 
     get: (_id, callback) ->
