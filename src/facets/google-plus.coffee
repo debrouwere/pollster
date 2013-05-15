@@ -1,8 +1,10 @@
 request = require 'request'
+utils = require '../utils'
 {CouldNotFetch, Facet} = require '../persistence'
 
 class module.exports extends Facet
-    poll: (url, callback) ->
+    poll: (url, options..., callback) ->
+        options = utils.optional options
         # I'm cargo-culting a bit here -- I'm not sure which of these
         # parameters are strictly required.
         params =

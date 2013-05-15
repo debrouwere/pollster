@@ -1,9 +1,11 @@
 request = require 'request'
 {CouldNotFetch, Facet} = require '../persistence'
+utils = require '../utils'
 _ = require 'underscore'
 
 class module.exports extends Facet
-    poll: (url, callback) ->
+    poll: (url, options..., callback) ->
+        options = utils.optional options
         params =
             uri: 'https://graph.facebook.com/'
             qs:

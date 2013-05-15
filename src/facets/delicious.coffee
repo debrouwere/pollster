@@ -1,8 +1,10 @@
 request = require 'request'
+utils = require '../utils'
 {CouldNotFetch, Facet} = require '../persistence'
 
 class module.exports extends Facet
-    poll: (url, callback) ->
+    poll: (url, options..., callback) ->
+        options = utils.optional options
         params =
             uri: 'http://feeds.delicious.com/v2/json/urlinfo/data'
             qs:
