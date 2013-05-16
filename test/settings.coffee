@@ -24,3 +24,9 @@ exports.history = history =
 
 exports.watchlist = watchlist =
     MongoDB: new backends.watchlist.MongoDB locations.mongodb
+
+for name, driver of queue
+    driver.watchlist = watchlist[name]
+
+for name, driver of watchlist
+    driver.queue = queue[name]

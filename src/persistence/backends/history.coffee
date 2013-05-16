@@ -38,6 +38,11 @@ class History
             return callback err if err
             callback err, results.map (result) -> pluck result, facets
 
+    log: (type, meta) ->
+        switch type
+            when 'write'
+                values = _.flatten _.pairs utils.serialize.deflate meta.row
+                console.log "[HISTORY]", values...
 
 # ConsoleHistory is useful during development
 class exports.Console extends History
@@ -49,8 +54,7 @@ class exports.Console extends History
         if @level in [0, 2]
             # converting the data object into something that is more easily
             # readable on the command line
-            values = _.flatten _.pairs utils.serialize.deflate row url, facet, timestamp, data
-            console.log "[HISTORY]", values...
+            @log row url, facet, timestamp, data
         if @level in [1, 2]
             @buffer.push row url, facet, timestamp, data
 
@@ -87,8 +91,7 @@ class exports.MongoDB extends History
 
     put: (url, facet, timestamp, data, callback) ->
         object = row url, facet, timestamp, data
-        values = _.flatten _.pairs utils.serialize.deflate object
-        console.log "[HISTORY]", values...
+        @log 'write', object
         @collection.insert object, callback
 
     get: (_id, callback) ->

@@ -40,7 +40,7 @@ exports.process = process =
             if not data then return callback null
 
             if options.watchlist
-                console.log "Processing #{url} as a watchlist", options
+                console.log "[WATCHLIST] Processing #{url} as a watchlist"
                 uris = utils.traverse.pluck data, options.root, options.path
                 # feeds will often contain older items we're already tracking, 
                 # and {replace: no} tells the watchlist that it shouldn't 

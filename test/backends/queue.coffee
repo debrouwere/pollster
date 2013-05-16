@@ -2,15 +2,19 @@ should = require 'should'
 async = require 'async'
 _ = require 'underscore'
 settings = require '../settings'
+facets = require '../../src/facets'
 
 test = (db) -> ->
     row = ['http://example.org', 'facebook', 123]
     {url, facet, timestamp} = row
 
-    # db.next tests the watchlist more than the queue, so we're
-    # turning it into a noop here
+    # db.next and db.optionsFor test the watchlist more than the queue, so
+    # we're turning them into noops / stubs here
     db = _.clone db
-    db.next = (key, callback) -> callback null
+    db.next = (key, callback) ->
+        callback null
+    db.optionsFor = (url, facetName, callback) ->
+        callback null, facets[facetName]
 
     beforeEach (done) ->    
         dbtype = db.constructor.name.toLowerCase()

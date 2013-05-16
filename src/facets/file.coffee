@@ -10,8 +10,6 @@ class module.exports extends Facet
         params =
             uri: url
 
-        console.log 'file poller received options', options
-
         request.get params, (err, response, body) ->
             if err
                 callback new CouldNotFetch()
