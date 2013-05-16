@@ -2,6 +2,7 @@ mongodb = require 'mongodb'
 redis = require 'redis'
 AWS = require 'aws-sdk'
 _ = require 'underscore'
+utils = require '../utils'
 
 module.exports = 
     MongoDB:
@@ -27,4 +28,11 @@ module.exports =
         connect: (callback) ->
 
     Redis:
-        connect: (callback) ->
+        # allows for a callback for consistency, but doesn't need one
+        connect: (location, callback=utils.noop) ->
+            if location
+                client = redis.createClient location.port, location.host
+            else
+                client = redis.createClient()
+            callback null, client
+            return client

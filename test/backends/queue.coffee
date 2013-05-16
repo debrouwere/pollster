@@ -30,6 +30,7 @@ test = (db) -> ->
     it 'can pop a task from the queue', (done) ->
         db.push row..., (err) ->
             db.pop (err, tasks) ->
+                console.log 'popped tasks', tasks
                 tasks.length.should.eql 1
                 task = tasks[0]
                 task.url.should.eql row[0]
@@ -38,4 +39,4 @@ test = (db) -> ->
                 done()
 
 describe 'MongoDB queue backend', test settings.queue.MongoDB
-#describe 'Redis queue backend', test settings.queue.Redis
+describe 'Redis queue backend', test settings.queue.Redis

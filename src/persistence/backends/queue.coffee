@@ -120,33 +120,46 @@ class exports.MongoDB extends Queue
         @collection.update {'facet+url': key}, item, {safe: yes, upsert: yes}, callback
         @log 'push', {key, timestamp}
 
-# TODO: add Redis queue
+
 class exports.Redis extends Queue
     connect: (callback) ->
+        @client = engines.Redis.connect @location, callback
 
     create: (callback) ->
+        callback null
 
-###
-* queue table (sorted set) *
+    next: (key, callback=utils.noop) ->
+        self = this
+        [facet, url] = key.split '+'
 
-    score => facet+url
+        self.nextFor url, facet, (err, timestamp) ->
+            self.client.zrem ['queue', key], (err, res) ->
+                self.push url, facet, timestamp, callback
 
-    - when a new URL gets added: 
-      add all its facets to the queue as well
-      with score 0 (= now)
-      ZADD 0 facet+url 0 facet+url 0 facet+url ...
+    inflate: (doc, callback) ->
+        [facetName, url] = utils.split doc['facet+url'], '+', 1
+        @optionsFor url, facetName, (err, facet) =>
+            # `notify` is run when a task is finished, and this 
+            # will call off the recovery (retry attempts)
+            notify = @recoveryFor url, facetName, doc['timestamp']
+            callback null, {url, facet, notify}
 
-    - every second:
-      ZRANGE myzset 0 current_time
-    - add to `async.queue` with MAX_CONCURRENT requests
-      (this is *per facet/service*, Node itself will
-      take care the server doesn't take on more -- globally --
-      than it can handle)
-    - if facet successfully fetched and saved
-      - fetch settings[facet+url], compute next tick
-        (meaning "earliest tick in the future" -- 
-        if the service was interrupted and we've missed
-        ticks, so be it)
-      - update item score (next tick)
-        ZADD score facet+url [this is a set, so ZADD = update]
-###
+    pop: (callback) ->
+        # once the caller has finished with whatever it has popped off
+        # the queue, it should call `success` so we can do the necessary
+        # cleanup on this end
+        self = this
+        now = utils.timing.now()
+        query = ['queue', 0, now]
+        self.client.zrangebyscore query, (err, items) ->
+            items = items.map (member) ->
+                {'facet+url': member, timestamp: now}
+            self.processTasks items, callback
+
+    push: (url, facet, timestamp, callback) ->
+        if not timestamp then return callback null
+
+        member = "#{facet}+#{url}"
+        score = timestamp
+        @client.zadd ['queue', score, member], callback
+        @log 'push', {key: member, timestamp: "~#{score}"}

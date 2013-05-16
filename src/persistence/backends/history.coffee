@@ -51,12 +51,13 @@ class exports.Console extends History
     create: (callback) -> callback null
 
     put: (url, facet, timestamp, data, callback) ->
+        object = row url, facet, timestamp, data
         if @level in [0, 2]
             # converting the data object into something that is more easily
             # readable on the command line
-            @log row url, facet, timestamp, data
+            @log 'write', {row: object}
         if @level in [1, 2]
-            @buffer.push row url, facet, timestamp, data
+            @buffer.push object
 
         callback null
 
@@ -91,7 +92,7 @@ class exports.MongoDB extends History
 
     put: (url, facet, timestamp, data, callback) ->
         object = row url, facet, timestamp, data
-        @log 'write', object
+        @log 'write', {row: object}
         @collection.insert object, callback
 
     get: (_id, callback) ->

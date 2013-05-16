@@ -14,9 +14,13 @@ exports.clear = clear =
     console: (done) ->
         history.Console = new backends.history.Console history.Console.level
         done()
+    redis: (done) ->
+        engines.Redis.connect undefined, (err, client) ->
+            client.flushdb done
 
 exports.queue = queue =
     MongoDB: new backends.queue.MongoDB locations.mongodb
+    Redis: new backends.queue.Redis null, null
 
 exports.history = history =
     MongoDB: new backends.history.MongoDB locations.mongodb

@@ -17,17 +17,16 @@ config =
 
 backends =
     watchlist: new pollster.persistence.backends.watchlist.MongoDB location, config
-    queue: new pollster.persistence.backends.queue.MongoDB location
+    #queue: new pollster.persistence.backends.queue.MongoDB location
+    queue: new pollster.persistence.backends.queue.Redis()
     history: new pollster.persistence.backends.history.MongoDB location
-
-console.log backends.watchlist.defaults
 
 app = new pollster.Pollster backends
 app.use 'twitter'
 app.use 'facebook'
 #app.use 'guardian-fields', here '/guardian/content-api.coffee'
 
-feed = 'http://content.guardianapis.com/search?page-size=50&format=json'
+feed = 'http://content.guardianapis.com/search?page-size=5&format=json'
 asWatchList =
     facets: ['file']
     tick: (utils.timing.minutes 1)
@@ -40,7 +39,11 @@ asWatchList =
         replace: no
         parse: yes
 
+reset = (callback) ->
+    backends.history.client.dropDatabase ->
+        backends.queue.client.flushdb callback
+
 app.start 3000, (err) ->
     if err then throw err
-    #backends.history.client.dropDatabase ->
-    app.track feed, asWatchList
+    reset ->
+        app.track feed, asWatchList
