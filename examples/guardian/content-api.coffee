@@ -1,12 +1,14 @@
 {parse} = require 'url'
 request = require 'request'
 _ = require 'underscore'
-{CouldNotFetch, Facet} = require '../../src/models'
+utils = require '../../src/utils'
+{CouldNotFetch, Facet} = require '../../src/persistence'
 
 class module.exports extends Facet
     isProxy: yes
 
-    poll: (url, callback) ->
+    poll: (url, options..., callback) ->
+        options = utils.optional options
         url = (parse url).pathname
 
         params =

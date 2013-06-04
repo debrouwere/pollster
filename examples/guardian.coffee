@@ -1,32 +1,54 @@
+fs = require 'fs'
 pollster = require '../src'
 utils = require '../src/utils'
+db = pollster.persistence.backends
 
 here = (src) -> __dirname + src
 
-location =
+local =
     ip: '127.0.0.1'
     port: 27017
     username: undefined
     password: undefined
 
+aws = 
+    accessKeyId: process.env.POLLSTER_AWS_ACCESS_KEY_ID
+    secretAccessKey: process.env.POLLSTER_AWS_SECRET_ACCESS_KEY
+    region: process.env.POLLSTER_AWS_REGION
+
+aws.capacity =
+    read: 50
+    write: 50
+
 config =
-    facets: ['twitter', 'facebook']
-    tick: (utils.timing.minutes 5)
+    facets: [
+        'twitter'
+        'facebook'
+        'google-plus'
+        'linkedin'
+        'pinterest'
+        'delicious'
+        ]
+    # for testing purposes, let's speed up the ticks
+    tick: [(utils.timing.minutes 5), (utils.timing.weeks 1)]
     window: [0, (utils.timing.years 1)]
     decay: 1.7
 
-backends =
-    watchlist: new pollster.persistence.backends.watchlist.MongoDB location, config
-    #queue: new pollster.persistence.backends.queue.MongoDB location
-    queue: new pollster.persistence.backends.queue.Redis()
-    history: new pollster.persistence.backends.history.MongoDB location
+backends = {}
+backends.local =
+    watchlist: new db.watchlist.MongoDB location
+    queue: new db.queue.MongoDB location
+    history: new db.history.MongoDB location
+backends.performance =
+    watchlist: new db.watchlist.DynamoDB aws
+    queue: new db.queue.Redis()
+    history: new db.history.DynamoDB aws
 
-app = new pollster.Pollster backends
-app.use 'twitter'
-app.use 'facebook'
-#app.use 'guardian-fields', here '/guardian/content-api.coffee'
+app = new pollster.Pollster backends.performance, config
 
-feed = 'http://content.guardianapis.com/search?page-size=5&format=json'
+# tip: a big page size (50) is recommended in production (we sometimes 
+# publish in bulk) but for testing, a page size of 20 is ideal.
+feed = 'http://content.guardianapis.com/search?page-size=50&format=json'
 asWatchList =
     facets: ['file']
     tick: (utils.timing.minutes 1)
@@ -39,11 +61,10 @@ asWatchList =
         replace: no
         parse: yes
 
-reset = (callback) ->
-    backends.history.client.dropDatabase ->
-        backends.queue.client.flushdb callback
+resetLocal = (callback) ->
+    app.poller.connect ->
+        backends.local.history.client.dropDatabase callback
 
 app.start 3000, (err) ->
     if err then throw err
-    reset ->
-        app.track feed, asWatchList
+    app.track feed, asWatchList
