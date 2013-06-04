@@ -8,11 +8,13 @@ test = (db) -> ->
         console.log 'WARNING: no DynamoDB credentials found, skipping tests'
         return
 
+    # TODO: take care of creation of the DB too
+    # (necessary in the case of DynamoDB)
     beforeEach (done) ->    
-        dbtype = db.constructor.name.toLowerCase()
-        connect = db.connect.bind db
-        setup = [settings.clear[dbtype], connect]
-        async.parallel setup, done
+        this.timeout 120 * 1000
+        dbtype = db.backend.toLowerCase()
+        setup = [settings.clear[dbtype], db.initialize]
+        async.series setup, done
 
     url = 'http://guardian.co.uk'
     facets = ['facebook', 'twitter']
@@ -57,4 +59,4 @@ test = (db) -> ->
     # unwatch: (url, callback) ->
 
 describe 'MongoDB watchlist backend', test settings.watchlist.MongoDB
-describe 'DynamoDB watchlist backend', test settings.watchlist.DynamoDB
+#describe 'DynamoDB watchlist backend', test settings.watchlist.DynamoDB

@@ -32,10 +32,10 @@ test = (db) -> ->
         return
 
     beforeEach (done) ->
-        dbtype = db.constructor.name.toLowerCase()
-        connect = db.connect.bind db
-        setup = [settings.clear[dbtype], connect]
-        async.parallel setup, done
+        this.timeout 7500
+        dbtype = db.backend.toLowerCase()
+        setup = [settings.clear[dbtype], db.initialize]
+        async.series setup, done
 
     url = 'http://example.org'
     facet = 'facebook'
@@ -64,4 +64,4 @@ test = (db) -> ->
     # getFacetsFor: (id, callback) ->
 
 describe 'MongoDB history backend', test settings.history.MongoDB
-describe 'DynamoDB history backend', test settings.history.DynamoDB
+#describe 'DynamoDB history backend', test settings.history.DynamoDB
