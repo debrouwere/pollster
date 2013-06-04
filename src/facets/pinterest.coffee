@@ -6,9 +6,7 @@ class module.exports extends Facet
     poll: (url, options..., callback) ->
         options = utils.optional options
         params =
-            uri: 'http://api.pinterest.com/v1/urls/count.json'
-            qs:
-                url: url
+            uri: 'http://api.pinterest.com/v1/urls/count.json?url=' + url
             json: no
 
         request.get params, (err, response, body) ->
