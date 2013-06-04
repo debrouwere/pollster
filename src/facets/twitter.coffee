@@ -6,9 +6,9 @@ class module.exports extends Facet
     poll: (url, options..., callback) ->
         options = utils.optional options
         params =
-            uri: 'http://urls.api.twitter.com/1/urls/count.json'
-            qs:
-                url: url
+            # put the url in `uri` rather than `qs` because Twitter
+            # needs URLs to *not* be urlencoded
+            uri: 'http://urls.api.twitter.com/1/urls/count.json?url=' + url
             json: yes
 
         request.get params, (err, response, result) ->

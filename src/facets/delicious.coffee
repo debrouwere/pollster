@@ -17,4 +17,4 @@ class module.exports extends Facet
             if err or response.statusCode isnt 200
                 callback new CouldNotFetch()
             else
-                callback null, result[0].total_posts
+                callback null, result[0]?.total_posts
