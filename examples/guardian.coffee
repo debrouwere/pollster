@@ -36,9 +36,9 @@ config =
 
 backends = {}
 backends.local =
-    watchlist: new db.watchlist.MongoDB location
-    queue: new db.queue.MongoDB location
-    history: new db.history.MongoDB location
+    watchlist: new db.watchlist.MongoDB local
+    queue: new db.queue.MongoDB local
+    history: new db.history.MongoDB local
 backends.performance =
     watchlist: new db.watchlist.DynamoDB aws
     queue: new db.queue.Redis()
