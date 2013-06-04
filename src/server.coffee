@@ -95,3 +95,5 @@ class exports.Pollster extends Server
             decay: 1.7
             options:
                 replace: yes
+
+        persistence.watchlist.defaults = @configuration

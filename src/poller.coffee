@@ -11,11 +11,15 @@ class exports.Poller
 
     connect: (callback) ->
         backends = (_.values @persistence)
-        _connect = (db, done) -> 
-            db.connect done
-        async.each backends, _connect, (err) =>
+
+        initialize = (db, done) -> 
+            db.initialize done
+        notify = (err) =>
             @connected = yes
-            callback err
+            callback err  
+
+        async.each backends, initialize, notify
+
 
     track: (url, parameters, callback) ->
         console.log "[POLLER] Now tracking #{url}"
@@ -42,10 +46,9 @@ class exports.Poller
     start: (callback) ->
         poller = this
         poller.connect (err) ->
-            if err then callback err
-            console.log 'connected to DB, rebuilding queue'
+            if err then return callback err
             poller.persistence.queue.rebuild (err) ->
-                if err then callback err
+                if err then return callback err
                 poller.iid = setInterval (poller.poll.bind poller), 1000 * (timing.seconds 1)
                 callback null
 

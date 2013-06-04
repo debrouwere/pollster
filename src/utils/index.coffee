@@ -31,11 +31,26 @@ exports.last = (arr) ->
     arr[arr.length-1]
 
 
+exports.affix = (prefix, base, suffix, connector='-') ->
+    if prefix
+        prefix = prefix + connector
+    else
+        prefix = ''
+
+    if suffix
+        suffix = connector + suffix
+    else
+        suffix = ''
+
+    prefix + base + suffix
+
+
 # with a function signature `(one, options..., two, three, etc)`
 # extract options from the resulting array; also apply defaults
 # if applicable
 exports.optional = (options, defaults={}) ->
     options = if options.length then options[0] else {}
     _.defaults options, defaults
+
 
 exports.noop = ->
