@@ -1,7 +1,6 @@
 mongodb = require 'mongodb'
 redis = require 'redis'
 AWS = require 'aws-sdk'
-
 _ = require 'underscore'
 async = require 'async'
 engines = require '../engines'
@@ -11,10 +10,17 @@ facets = require '../../facets'
 
 
 class Queue
+    constructor: (@location, @watchlist, @facets) ->
+        @backend = this.constructor.name
+        _.bindAll this
+
+    initialize: (callback) ->
+        async.series [@connect, @create], (err) =>
+            callback err, @collection, @client
+
     unpack: (item, callback) ->
-        {url, facet, calendar} = item
-        console.log 'unpacking', item
-        @push url, facet, next, callback
+        {url, facet, timestamp} = item
+        @push url, facet, timestamp, callback
 
     nextFor: (url, facet, callback) ->
         @watchlist.getCalendarsFor url, (err, calendars) ->
@@ -24,7 +30,7 @@ class Queue
 
     optionsFor: (url, facetName, callback) ->
         @watchlist.get url, (err, configuration) ->
-            if err then callback err
+            if err then return callback err
             facet = facets[facetName]
             facet = facet.extend configuration.options
             callback null, facet
@@ -43,6 +49,14 @@ class Queue
             done err
 
     processTasks: (rawTasks, callback) ->
+        # REFACTOR
+        # sort of hackish... didn't properly abstract some 
+        # of the MongoDB stuff
+        rawTasks = rawTasks.map (task) ->
+            if not task['facet+url']
+                task['facet+url'] ?= task['facet'] + '+' + task['url']
+            task
+
         next = @next.bind this
         inflate = @inflate.bind this
         async.map rawTasks, inflate, (err, tasks) ->
@@ -54,24 +68,23 @@ class Queue
                 callback err, tasks
 
     rebuild: (callback) ->
-        console.log '[REBUILDING WATCHLIST]'
         unpack = @unpack.bind this
 
         @watchlist.list (err, list) =>
+            console.log "[REBUILDING QUEUE: #{list.length} items on the watchlist]"
             flattenedWatchList = []
             for url, relatedFacets of list
                 for facet, calendar of relatedFacets
-                    next = calendar.next align: yes
-                    if next then flattenedWatchList.push {url, facet, next}
+                    next = calendar.next null, align: yes
+                    if next then flattenedWatchList.push {url, facet, timestamp: next}
 
-            async.each flattenedWatchList, unpack, callback
+            async.each flattenedWatchList, unpack, (err) ->
+                callback err
  
     log: (type, meta) ->
         switch type
             when 'push'
                 console.log "[SCHEDULE] [#{meta.timestamp}] #{meta.key}"
-
-    constructor: (@location, @watchlist, @facets) ->
 
 
 class exports.MongoDB extends Queue
@@ -106,7 +119,7 @@ class exports.MongoDB extends Queue
         query = {timestamp: {$lte: now}}
 
         (@collection.find query).toArray (err, documents) =>
-            if err then return callback err            
+            if err then return callback err        
             @processTasks documents, callback
 
     push: (url, facet, timestamp, callback) ->
@@ -126,7 +139,7 @@ class exports.Redis extends Queue
         @client = engines.Redis.connect @location, callback
 
     create: (callback) ->
-        callback null
+        process.nextTick -> callback null
 
     next: (key, callback=utils.noop) ->
         self = this

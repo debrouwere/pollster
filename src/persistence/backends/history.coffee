@@ -8,7 +8,7 @@ The latter will be considerably faster.
 mongodb = require 'mongodb'
 redis = require 'redis'
 AWS = require 'aws-sdk'
-
+async = require 'async'
 _ = require 'underscore'
 engines = require '../engines'
 utils = require '../../utils'
@@ -25,17 +25,24 @@ row = (url, facet, timestamp, data) ->
     object[facet] = data
     object
 
+
 class History
     constructor: (@location, @credentials, @facets) ->
+        @backend = this.constructor.name
+        _.bindAll this
+
+    initialize: (callback) ->
+        async.series [@connect, @create], (err) =>
+            callback err, @collection, @client
 
     getFacetsFor: (id, callback) ->
         @get id, (err, result) ->
-            return callback err if err
+            if err then return callback err
             callback err, (pluck result, facets)
 
     queryFacetsFor: (filter, callback) ->
         @query filter, (err, results) ->
-            return callback err if err
+            if err then return callback err
             callback err, results.map (result) -> pluck result, facets
 
     log: (type, meta) ->
@@ -43,6 +50,7 @@ class History
             when 'write'
                 values = _.flatten _.pairs utils.serialize.deflate meta.row
                 console.log "[HISTORY]", values...
+
 
 # ConsoleHistory is useful during development
 class exports.Console extends History
@@ -102,26 +110,61 @@ class exports.MongoDB extends History
         (@collection.find filter).toArray callback
 
     stat: (callback) ->
+        throw new Error "Not implemented yet."
 
 
 class exports.DynamoDB extends History
+    constructor: ->
+        super arguments...
+        @tableName = utils.affix @location.prefix, 'pollster-history', @location.suffix
+        @capacity = @location.capacity or {read: 10, write: 5}
+
     connect: (callback) ->
-        @client = new AWS.DynamoDB().client
+        @client = engines.DynamoDB.connect @location, callback
+        @collection = engines.DynamoDB.interfaceFor @client, @tableName
 
     create: (callback) ->
-        @client.createTable params, (err, data) ->
+        params = 
+            TableName: @tableName
+            AttributeDefinitions: [
+                {
+                    AttributeName: 'url'
+                    AttributeType: 'S'
+                }
+                {
+                    AttributeName: 'timestamp'
+                    AttributeType: 'N'
+                }
+            ]
+            KeySchema: [
+                {
+                    AttributeName: 'url'
+                    KeyType: 'HASH'
+                }
+                {
+                    AttributeName: 'timestamp'
+                    KeyType: 'RANGE'
+                }
+            ]
+            ProvisionedThroughput: 
+                ReadCapacityUnits: @capacity.read
+                WriteCapacityUnits: @capacity.write
 
-    put: (data, callback) ->
-        @client.putItem
+        @collection.createTable params, callback
 
-    get: (id, callback) ->
-        @client.getItem # single
+    put: (url, facet, timestamp, data, callback) ->
+        item = row url, facet, timestamp, data
+        @log 'write', {row: item}
+        @collection.put item, callback
+
+    # TODO: this isn't proper
+    get: (key..., value, callback) ->
+        key = 'url'
+        @collection.get key, value, callback
 
     query: (filter, callback) ->
-        @client.query # range
+        throw new Error "Not implemented yet."
+        #@collection.query
 
     stat: (callback) ->
-
-    constructor: (@location, @credentials) ->
-        # perhaps get credentials from ENV?
-        # { "accessKeyId": "akid", "secretAccessKey": "secret", "region": "us-west-2" }
+        throw new Error "Not implemented yet."
