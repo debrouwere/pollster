@@ -154,7 +154,7 @@ class exports.DynamoDB extends WatchList
         enqueue = @buildTask url, parameters
 
         collection.get url, (err, found) ->
-            if false and found and not (parameters.replace or found.options.replace)
+            if found and not (parameters.replace or found.options.replace)
                 callback null
             else
                 collection.put item, (err) ->
