@@ -41,7 +41,7 @@ class WatchList
         nextTick = calendar.next -1
 
         (facet, done) =>
-            @queue.push url, facet, nextTick, done
+            @queue.push url, facet, nextTick, 1, done
 
 
 class exports.MongoDB extends WatchList

@@ -20,7 +20,7 @@ class Queue
 
     unpack: (item, callback) ->
         {url, facet, timestamp} = item
-        @push url, facet, timestamp, callback
+        @push url, facet, timestamp, 1, callback
 
     nextFor: (url, facet, callback) ->
         @watchlist.getCalendarsFor url, (err, calendars) ->
@@ -35,14 +35,14 @@ class Queue
             facet = facet.extend configuration.options
             callback null, facet
 
-    recover: (url, facet, timestamp) ->
+    recover: (url, facet, timestamp, attempt) ->
         retry = =>
             console.log "[RETRY] [#{timestamp}] #{url} #{facet} "
-            @push url, facet, timestamp, utils.noop
+            @push url, facet, timestamp, attempt++, utils.noop
         setTimeout retry, 60 * 1000
 
-    recoveryFor: (url, facetName, timestamp) ->
-        retryId = @recover url, facetName, timestamp
+    recoveryFor: (url, facetName, timestamp, attempt) ->
+        retryId = @recover url, facetName, timestamp, attempt
 
         (err, done=utils.noop) ->
             clearTimeout retryId
@@ -59,6 +59,7 @@ class Queue
 
         next = @next.bind this
         inflate = @inflate.bind this
+
         async.map rawTasks, inflate, (err, tasks) ->
             # remove these tasks from the queue and create new ones
             # before handing things off -- this avoids polling keys
@@ -68,9 +69,7 @@ class Queue
                 callback err, tasks
 
     rebuild: (callback) ->
-        unpack = @unpack.bind this
-
-        @watchlist.list (err, list) =>
+        unpack = (list, done) =>
             console.log "[REBUILDING QUEUE: #{list.length} items on the watchlist]"
             flattenedWatchList = []
             for url, relatedFacets of list
@@ -78,13 +77,14 @@ class Queue
                     next = calendar.next null, align: yes
                     if next then flattenedWatchList.push {url, facet, timestamp: next}
 
-            async.each flattenedWatchList, unpack, (err) ->
-                callback err
+            async.each flattenedWatchList, @unpack, done
+
+        async.waterfall [@clear, @watchlist.list, unpack], callback
  
     log: (type, meta) ->
         switch type
             when 'push'
-                console.log "[SCHEDULE] [#{meta.timestamp}] #{meta.key}"
+                console.log "[SCHEDULE] [#{meta.timestamp}] #{meta.key} [ATTEMPT #{meta.attempt}]"
 
 
 class exports.MongoDB extends Queue
@@ -95,20 +95,23 @@ class exports.MongoDB extends Queue
     create: (callback) ->
         @collection.ensureIndex 'facet+url', callback
 
+    clear: (callback) ->
+        @collection.remove (err, res) -> callback err
+
     next: (key, callback=utils.noop) ->
         self = this
         [facet, url] = key.split '+'
 
         self.nextFor url, facet, (err, timestamp) ->
             self.collection.remove {'facet+url': key}, (err) =>
-                self.push url, facet, timestamp, callback
+                self.push url, facet, timestamp, 1, callback
 
     inflate: (doc, callback) ->
         [facetName, url] = utils.split doc['facet+url'], '+', 1
         @optionsFor url, facetName, (err, facet) =>
             # `notify` is run when a task is finished, and this 
             # will call off the recovery (retry attempts)
-            notify = @recoveryFor url, facetName, doc['timestamp']
+            notify = @recoveryFor url, facetName, doc['timestamp'], doc['attempt']
             callback null, {url, facet, notify}
 
     pop: (callback) ->
@@ -122,16 +125,20 @@ class exports.MongoDB extends Queue
             if err then return callback err        
             @processTasks documents, callback
 
-    push: (url, facet, timestamp, callback) ->
-        if not timestamp then return callback null
+    push: (url, facet, timestamp, attempt, callback) ->
+        retryable = attempt < 4
+        inWindow = timestamp
+
+        if not (retryable and inWindow) then return callback null
 
         key = "#{facet}+#{url}"
         item = 
             'facet+url': key
             'timestamp': timestamp
+            'attempt': attempt
 
         @collection.update {'facet+url': key}, item, {safe: yes, upsert: yes}, callback
-        @log 'push', {key, timestamp}
+        @log 'push', {key, timestamp, attempt}
 
 
 class exports.Redis extends Queue
@@ -141,20 +148,23 @@ class exports.Redis extends Queue
     create: (callback) ->
         process.nextTick -> callback null
 
+    clear: (callback) ->
+        @client.del 'queue', (err, res) -> callback err
+
     next: (key, callback=utils.noop) ->
         self = this
         [facet, url] = key.split '+'
 
         self.nextFor url, facet, (err, timestamp) ->
             self.client.zrem ['queue', key], (err, res) ->
-                self.push url, facet, timestamp, callback
+                self.push url, facet, timestamp, 1, callback
 
     inflate: (doc, callback) ->
         [facetName, url] = utils.split doc['facet+url'], '+', 1
         @optionsFor url, facetName, (err, facet) =>
             # `notify` is run when a task is finished, and this 
             # will call off the recovery (retry attempts)
-            notify = @recoveryFor url, facetName, doc['timestamp']
+            notify = @recoveryFor url, facetName, doc['timestamp'], doc['attempt']
             callback null, {url, facet, notify}
 
     pop: (callback) ->
@@ -166,13 +176,17 @@ class exports.Redis extends Queue
         query = ['queue', 0, now]
         self.client.zrangebyscore query, (err, items) ->
             items = items.map (member) ->
-                {'facet+url': member, timestamp: now}
+                [attempt, item] = utils.split member, '+', 1
+                {'facet+url': item, timestamp: now, attempt: (parseInt attempt)}
             self.processTasks items, callback
 
-    push: (url, facet, timestamp, callback) ->
-        if not timestamp then return callback null
+    push: (url, facet, timestamp, attempt, callback) ->
+        retryable = attempt < 4
+        inWindow = timestamp
 
-        member = "#{facet}+#{url}"
+        if not (retryable and inWindow) then return callback null
+
+        member = "#{attempt}+#{facet}+#{url}"
         score = timestamp
         @client.zadd ['queue', score, member], callback
-        @log 'push', {key: member, timestamp: "~#{score}"}
+        @log 'push', {key: member, timestamp: "~#{score}", attempt}
