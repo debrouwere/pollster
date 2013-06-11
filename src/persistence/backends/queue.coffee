@@ -60,11 +60,13 @@ class Queue
         next = @next.bind this
         inflate = @inflate.bind this
 
-        async.map rawTasks, inflate, (err, tasks) ->
+        uniqueTasks = rawTasks.filter (task) -> task.attempt is 1
+
+        async.map uniqueTasks, inflate, (err, tasks) ->
             # remove these tasks from the queue and create new ones
             # before handing things off -- this avoids polling keys
             # twice
-            keys = _.pluck rawTasks, 'facet+url'
+            keys = _.pluck uniqueTasks, 'facet+url'
             async.each keys, next, (err) ->
                 callback err, tasks
 

@@ -26,7 +26,7 @@ config =
         'facebook'
         'google-plus'
         'linkedin'
-        'pinterest'
+        #'pinterest'
         'delicious'
         ]
     # for testing purposes, let's speed up the ticks
