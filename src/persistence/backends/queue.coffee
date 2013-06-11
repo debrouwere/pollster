@@ -38,7 +38,7 @@ class Queue
     recover: (url, facet, timestamp, attempt) ->
         retry = =>
             console.log "[RETRY] [#{timestamp}] #{url} #{facet} "
-            @push url, facet, timestamp, attempt++, utils.noop
+            @push url, facet, timestamp, (attempt + 1), utils.noop
         setTimeout retry, 60 * 1000
 
     recoveryFor: (url, facetName, timestamp, attempt) ->
