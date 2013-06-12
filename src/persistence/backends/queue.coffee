@@ -35,6 +35,8 @@ class Queue
             facet = facet.extend configuration.options
             callback null, facet
 
+    # TODO: perhaps make delay configurable, right now 
+    # I'm putting in some delay to avoid hammering an API
     recover: (url, facet, timestamp, attempt) ->
         retry = =>
             console.log "[RETRY] [#{timestamp}] #{url} #{facet} "
@@ -113,7 +115,7 @@ class exports.MongoDB extends Queue
         @optionsFor url, facetName, (err, facet) =>
             # `notify` is run when a task is finished, and this 
             # will call off the recovery (retry attempts)
-            notify = @recoveryFor url, facetName, doc['timestamp'], doc['attempt']
+            notify = @recoveryFor url, facetName, doc['timestamp'], doc['attempt']  
             callback null, {url, facet, notify}
 
     pop: (callback) ->

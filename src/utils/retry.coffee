@@ -11,7 +11,7 @@ exports.retry = (fn, times) ->
         err = null
         redirected_fn = (done) -> 
             # exponential back-off
-            wait = 500 * Math.pow attempt, 2
+            wait = 1000 * Math.pow attempt, 2
             _.delay fn, wait, args..., ->
                 attempt++
                 [err, results] = arguments

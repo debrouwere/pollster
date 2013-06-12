@@ -30,7 +30,7 @@ class exports.Facet
         # external APIs can be a bit flaky, so we don't 
         # give up right away
         poll = @poll.bind this
-        @poll = utils.retry poll, 5
+        @poll = utils.retry poll, 3
 
     extend: (options={}) ->
         options = _.defaults options, @options
