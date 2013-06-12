@@ -22,7 +22,7 @@ class module.exports extends Facet
             json: yes
 
         request.post params, (err, response, result) ->
-            if err or response.statusCode isnt 200
+            if err or response.statusCode isnt 200 or not result.result?
                 callback new CouldNotFetch()
             else
                 count = result.result.metadata.globalCounts.count
