@@ -1,3 +1,4 @@
+crypto = require 'crypto'
 mongodb = require 'mongodb'
 redis = require 'redis'
 AWS = require 'aws-sdk'
@@ -21,6 +22,24 @@ class Queue
     unpack: (item, callback) ->
         {url, facet, timestamp} = item
         @push url, facet, timestamp, 1, callback
+
+    # an easy way to divide up the workload between different 
+    # pollster instances, this decides whether or not to push
+    # something to the (local) queue.
+    isResponsible: (url) ->
+        spec = @location?.instance or '1/1'
+        [i, n] = spec.split '/'
+        # i should be zero-indexed for our calculation
+        i = i - 1
+
+        # create an md5 digest and then turn it into 
+        # a base 10 number
+        md5 = crypto.createHash 'md5'
+        md5.update url
+        digest = md5.digest 'hex'
+        x = parseInt digest.slice(-10), 16
+        
+        x % n is i
 
     nextFor: (url, facet, callback) ->
         @watchlist.getCalendarsFor url, (err, calendars) ->
@@ -130,10 +149,11 @@ class exports.MongoDB extends Queue
             @processTasks documents, callback
 
     push: (url, facet, timestamp, attempt, callback) ->
+        responsible = @isResponsible url
         retryable = attempt < 4
         inWindow = timestamp
 
-        if not (retryable and inWindow) then return callback null
+        if not (responsible and retryable and inWindow) then return callback null
 
         key = "#{facet}+#{url}"
         item = 
@@ -185,10 +205,11 @@ class exports.Redis extends Queue
             self.processTasks items, callback
 
     push: (url, facet, timestamp, attempt, callback) ->
+        responsible = @isResponsible url
         retryable = attempt < 4
         inWindow = timestamp
 
-        if not (retryable and inWindow) then return callback null
+        if not (responsible and retryable and inWindow) then return callback null
 
         member = "#{attempt}+#{facet}+#{url}"
         score = timestamp

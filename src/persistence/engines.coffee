@@ -192,9 +192,8 @@ module.exports =
     Redis:
         # allows for a callback for consistency, but doesn't need one
         connect: (location, callback=utils.noop) ->
-            if location
-                client = redis.createClient location.port, location.host
-            else
-                client = redis.createClient()
+            port = location?.port or 6379
+            host = location?.host or '127.0.0.1'
+            client = redis.createClient location.port, location.host
             callback null, client
             return client

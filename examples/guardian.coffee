@@ -20,6 +20,9 @@ aws.capacity =
     read: 50
     write: 50
 
+localRedis = 
+    instance: process.env.POLLSTER_INSTANCE or '1/1'
+
 config =
     facets: [
         'twitter'
@@ -29,7 +32,6 @@ config =
         #'pinterest'
         'delicious'
         ]
-    # for testing purposes, let's speed up the ticks
     tick: [(utils.timing.minutes 5), (utils.timing.weeks 1)]
     window: [0, (utils.timing.years 1)]
     decay: 1.7
@@ -41,7 +43,7 @@ backends.local =
     history: new db.history.MongoDB local
 backends.performance =
     watchlist: new db.watchlist.DynamoDB aws
-    queue: new db.queue.Redis()
+    queue: new db.queue.Redis localRedis
     history: new db.history.DynamoDB aws
 
 app = new pollster.Pollster backends.performance, config
