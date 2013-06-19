@@ -14,6 +14,7 @@ untangle = (result) ->
 class WatchList
     constructor: (@location, @defaults={}) ->
         @backend = this.constructor.name
+        @feeds = []
         _.bindAll this
 
     initialize: (callback) ->
@@ -75,6 +76,10 @@ class exports.MongoDB extends WatchList
     watch: (url, parameters, callback) ->
         item = @getParameters url, parameters
         enqueue = @buildTask url, parameters
+
+        # keep track of watchlist feeds
+        if item.options?.watchlist
+            @feeds.push url
 
         @collection.findOne {url}, (err, found) =>
             if found and not (parameters.replace or found.options.replace)
@@ -152,6 +157,10 @@ class exports.DynamoDB extends WatchList
         collection = @collection
         item = @getParameters url, parameters
         enqueue = @buildTask url, parameters
+
+        # keep track of watchlist feeds
+        if item.options?.watchlist
+            @feeds.push url
 
         collection.get url, (err, found) ->
             if found and not (parameters.replace or found.options.replace)

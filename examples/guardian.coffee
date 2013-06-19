@@ -32,7 +32,7 @@ config =
         #'pinterest'
         'delicious'
         ]
-    tick: [(utils.timing.minutes 5), (utils.timing.weeks 1)]
+    tick: [(utils.timing.minutes 1), (utils.timing.weeks 1)]
     window: [0, (utils.timing.years 1)]
     decay: 1.7
 

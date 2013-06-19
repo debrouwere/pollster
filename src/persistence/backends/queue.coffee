@@ -27,6 +27,11 @@ class Queue
     # pollster instances, this decides whether or not to push
     # something to the (local) queue.
     isResponsible: (url) ->
+        # every pollster instance should process watchlist feeds;
+        # it's only the workload contained in those feeds that 
+        # gets divided between instances
+        if url in @watchlist.feeds then return yes
+
         spec = @location?.instance or '1/1'
         [i, n] = spec.split '/'
         # i should be zero-indexed for our calculation
