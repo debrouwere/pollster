@@ -21,9 +21,9 @@ class exports.Poller
         async.each backends, initialize, notify
 
 
-    track: (url, parameters, callback) ->
+    track: (url, parameters, callback=utils.noop) ->
         console.log "[POLLER] Now tracking #{url}"
-        @persistence.watchlist.watch url, parameters, (callback or utils.noop)
+        @persistence.watchlist.watch url, parameters, callback
 
     poll: (callback=utils.noop) ->
         {persistence} = this

@@ -154,13 +154,13 @@ class exports.DynamoDB extends WatchList
             callback err, calendars
 
     watch: (url, parameters, callback) ->
+        # keep track of watchlist feeds
+        if parameters.options?.watchlist
+            @feeds.push url
+
         collection = @collection
         item = @getParameters url, parameters
         enqueue = @buildTask url, parameters
-
-        # keep track of watchlist feeds
-        if item.options?.watchlist
-            @feeds.push url
 
         collection.get url, (err, found) ->
             if found and not (parameters.replace or found.options.replace)

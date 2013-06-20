@@ -9,7 +9,6 @@ utils = require '../../utils'
 facets = require '../../facets'
 {Facet} = require '../facet'
 
-
 class Queue
     constructor: (@location, @watchlist, @facets) ->
         @backend = this.constructor.name
@@ -31,8 +30,9 @@ class Queue
         # it's only the workload contained in those feeds that 
         # gets divided between instances
         if url in @watchlist.feeds then return yes
+        if not @location?.instance then return yes
 
-        spec = @location?.instance or '1/1'
+        spec = @location.instance
         [i, n] = spec.split '/'
         # i should be zero-indexed for our calculation
         i = i - 1
@@ -98,11 +98,13 @@ class Queue
 
     rebuild: (callback) ->
         unpack = (list, done) =>
-            console.log "[REBUILDING QUEUE: #{list.length} items on the watchlist]"
+            len = (_.keys list).length
+            console.log "[REBUILDING QUEUE: #{len} items on the watchlist]"
             flattenedWatchList = []
             for url, relatedFacets of list
                 for facet, calendar of relatedFacets
                     next = calendar.next null, align: yes
+                    if calendar.details.options?.watchlist then @watchlist.feeds.push url
                     if next then flattenedWatchList.push {url, facet, timestamp: next}
 
             async.each flattenedWatchList, @unpack, done

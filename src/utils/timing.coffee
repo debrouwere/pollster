@@ -200,4 +200,6 @@ exports.Calendar.create = (options) ->
     {tick, window, decay, start} = options
     start ?= exports.now()
     schedule = new exports.Schedule tick, window, decay
-    new exports.Calendar schedule, start
+    calendar = new exports.Calendar schedule, start
+    calendar.details = options
+    calendar
