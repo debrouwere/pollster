@@ -1,4 +1,4 @@
 #!/usr/bin/env coffee
 
-server = require '../src/poller'
+poller = require '../src/poller'
 poller.listen()
