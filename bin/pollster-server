@@ -1,0 +1,17 @@
+#!/usr/bin/env coffee
+
+AWS = require 'aws-sdk'
+server = require '../src/server'
+
+credentials = 
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+    region: process.env.AWS_REGION
+
+sqs = new AWS.SQS credentials
+namespace = 'pollster'
+
+sqs.createQueue {QueueName: namespace}, (err, {QueueUrl}) ->
+    if err then return console.log err
+    pollster = new server.Pollster QueueUrl
+    pollster.listen 3334

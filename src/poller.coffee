@@ -1,56 +1,87 @@
-_ = require 'underscore'
 async = require 'async'
-fetch = (require './persistence').process.tasks
+_ = require 'underscore'
+AWS = require 'aws-sdk'
+dynode = require 'dynode'
+facets = require './facets'
 utils = require './utils'
-timing = utils.timing
 
-class exports.Poller
-    constructor: (@persistence) ->
-        @connected = no
-        @busy = no
+credentials = 
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+    region: process.env.AWS_REGION
 
-    connect: (callback) ->
-        backends = (_.values @persistence)
-
-        initialize = (db, done) -> 
-            db.initialize done
-        notify = (err) =>
-            @connected = yes
-            callback err  
-
-        async.each backends, initialize, notify
+sqs = new AWS.SQS credentials
+dynamo = new dynode.Client credentials
+namespace = 'pollster'
 
 
-    track: (url, parameters, callback=utils.noop) ->
-        console.log "[POLLER] Now tracking #{url}"
-        @persistence.watchlist.watch url, parameters, callback
+# initialization
+createTable = (done) ->
+    dynamo.listTables (err, {TableNames}) ->
+        if err then return done err
 
-    poll: (callback=utils.noop) ->
-        {persistence} = this
-
-        if @busy
-            return callback null
+        if namespace in TableNames
+            done null
         else
-            @busy = yes
+            indexes = {hash: {url: String}, range: {timestamp: Number}}
+            dynamo.createTable namespace, indexes, done
 
-        if @onStop?
-            clearInterval @iid
-            @onStop()
+createQueue = (done) ->
+    sqs.createQueue {QueueName: namespace}, done
+
+
+class Break
+
+Break.prototype = new Error
+
+
+# pluck a single message from the queue
+inquire = (QueueUrl, callback) ->
+    receive = (done) ->
+        sqs.receiveMessage {QueueUrl}, done
+
+    process = ({Messages}, done) ->
+        if not Messages?.length then return done new Break()
+
+        message = Messages[0]
+        {url, subset} = JSON.parse message.Body
+        subset ?= facets.all
+        # TODO: make what facets to fetch configurable through the CLI
+        facets.poll url, subset, (err, data) ->
+            timestamp = utils.timing.now()
+            indexedData = _.extend {url, timestamp}, data
+            done err, message.ReceiptHandle, indexedData
+
+    store = (handle, data, _done) ->
+        done = (err) -> _done err, handle
+
+        if data?
+            console.log 'saving data', (utils.serialize.deflate data, '/')
+            dynamo.putItem namespace, (utils.serialize.deflate data, '/'), done
         else
-            persistence.queue.pop (err, definitions) =>
-                @busy = no
-                if err then return callback err
-                console.log "[POLLER] popped #{definitions.length} task(s) from the queue"
-                fetch definitions, persistence, callback
+            done null
 
-    start: (callback) ->
-        poller = this
-        poller.connect (err) ->
-            if err then return callback err
-            poller.persistence.queue.rebuild (err) ->
-                if err then return callback err
-                poller.iid = setInterval (poller.poll.bind poller), 1000 * (timing.seconds 1)
-                callback null
+    acknowledge = (ReceiptHandle, done) ->
+        if ReceiptHandle
+            sqs.deleteMessage {QueueUrl, ReceiptHandle}, done
+        else
+            done null
 
-    stop: (callback) ->
-        @onStop = callback
+    async.waterfall [receive, process, store, acknowledge], (err) ->
+        if err instanceof Break
+            callback null
+        else
+            callback err
+
+# listen for new messages indefinitely, but one at a time
+# and only once per second at most
+listen = ({QueueUrl}, done) ->
+    inquireForQueue = async.apply inquire, QueueUrl
+    niceInquire = utils.debounce inquireForQueue, 1000
+    async.forever niceInquire, done
+
+
+# initialize and listen
+exports.listen = ->
+    async.waterfall [createTable, createQueue, listen], (err) ->
+        console.log err

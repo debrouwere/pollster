@@ -1,11 +1,11 @@
 _ = require 'underscore'
 
-exports.deflate = deflate = (obj, parentKey='', connector='-') ->
+exports.deflate = deflate = (obj, connector='-', parentKey='') ->
     items = []
     for k, v of obj
         newKey = if parentKey then (parentKey + connector + k) else k
         if v instanceof Object
-            items.push (_.pairs deflate v, newKey, connector)...
+            items.push (_.pairs deflate v, connector, newKey)...
         else
             items.push [newKey, v]
 
@@ -20,8 +20,9 @@ exports.inflate = inflate = (flatObj, connector='-') ->
         if (k.indexOf connector) isnt -1
             [baseKey, subKey...] = k.split connector
             subKey = subKey.join connector
+            subObj = _.object [[subKey, v]]
             obj[baseKey] ?= {}
-            _.extend obj[baseKey], inflate _.object [[subKey, v]]
+            _.extend obj[baseKey], (inflate subObj, connector)
         else
             obj[k] = v
 

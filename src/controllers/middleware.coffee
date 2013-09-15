@@ -22,7 +22,7 @@ params =
             req.app.facets
 
 exports.normalize =
-    get: (req, res, next) ->
+    all: (req, res, next) ->
         # The REST API allows people to request one or more facets
         # for one or more urls, but the application itself should 
         # not have to worry about these differences.

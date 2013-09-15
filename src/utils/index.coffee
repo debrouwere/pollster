@@ -1,11 +1,16 @@
-exports.timing = require './timing'
-exports.interpolate = require './interpolate'
 exports.traverse = require './traverse'
 exports.serialize = require './serialize'
+exports.timing = timing = require './timing'
 exports.retry = (require './retry').retry
 exports.CouldNotFetch = (require './retry').CouldNotFetch
 
 _ = require 'underscore'
+
+exports.get = (v) ->
+    if v instanceof Function
+        v()
+    else
+        v
 
 # Some APIs return exclusively JSONP.
 # We strip out the padding and then treat it like regular JSON.
@@ -54,3 +59,16 @@ exports.optional = (options, defaults={}) ->
 
 
 exports.noop = ->
+
+
+# rate limit a function (like an async version of _.debounce)
+exports.debounce = (fn, milliseconds) ->
+    niceFn = ->
+        fnArguments = arguments
+        delay = Math.max 0, milliseconds - (timing.delta niceFn.lastCalled)
+        niceFn.lastCalled = timing.now() + delay
+        setTimeout (-> fn fnArguments...), delay
+
+    niceFn.lastCalled = timing.now()
+
+    niceFn

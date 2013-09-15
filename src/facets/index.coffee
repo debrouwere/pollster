@@ -1,10 +1,22 @@
 fs = require 'fs'
 fs.path = require 'path'
+async = require 'async'
+utils = require '../utils'
 _ = require 'underscore'
 
-here = (segments...) -> fs.path.join __dirname, segments...
 
-module.exports = facets = {}
+exports.poll = registry = (url, facets, callback) ->
+    subset = {}
+
+    for name in facets
+        do (name) ->
+            poll = registry[name]
+            subset[name] = (done) -> poll url, done
+
+    async.parallel subset, callback
+
+
+here = (segments...) -> fs.path.join __dirname, segments...
 
 for facetPath in fs.readdirSync here './'
     extension = fs.path.extname facetPath
@@ -15,4 +27,7 @@ for facetPath in fs.readdirSync here './'
     facetName = fs.path.basename facetPath, extension
     facetFile = here './', facetPath
     handler = require facetFile
-    facets[facetName] = _.extend {name: facetName}, new handler()
+    registry[facetName] = handler
+
+
+exports.all = ['delicious', 'facebook', 'google-plus', 'linkedin', 'pinterest', 'reddit', 'twitter']

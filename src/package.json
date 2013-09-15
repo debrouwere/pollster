@@ -9,7 +9,9 @@
     "express": "~3.4.0",
     "request": "~2.27.0",
     "underscore": "~1.5.2",
-    "async": "0.2.x"
+    "async": "0.2.x", 
+    "commander": "", 
+    "feedparser": ""
   },
   "devDependencies": {},
   "scripts": {
@@ -26,11 +28,6 @@
     "polling",
     "sharing"
   ],
-  "bin": {
-    "pollster-poller": "./bin/pollster-poller", 
-    "pollster-server": "./bin/pollster-server", 
-    "feedster": "./bin/feedster",     
-  },
   "author": "Stijn Debrouwere",
   "license": "MIT"
 }
