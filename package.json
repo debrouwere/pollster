@@ -29,7 +29,7 @@
   "bin": {
     "pollster-poller": "./bin/pollster-poller", 
     "pollster-server": "./bin/pollster-server", 
-    "feedster": "./bin/feedster",     
+    "feedster": "./bin/feedster"   
   },
   "author": "Stijn Debrouwere",
   "license": "MIT"
