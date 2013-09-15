@@ -13,7 +13,7 @@ parseFile = request.get
 
 module.exports = (options) ->
     {input, root, path, output, feed} = options
-    input ?= 'http://localhost:3334/facets/'
+    output ?= 'http://localhost:3334/facets/'
     parse = if feed then parseFeed else parseFile
 
     parse {uri: input, json: yes}, (err, meta, articles) ->
