@@ -4,7 +4,7 @@ timing = require './timing'
 
 exports.CouldNotFetch = (@message) ->
 
-exports.retry = (fn, times) ->
+exports.retry = (fn, times, soaker) ->
     (args..., callback) ->
         attempt = 0
         results = null
@@ -23,4 +23,8 @@ exports.retry = (fn, times) ->
             return hope and fetchError
 
         async.doWhilst redirected_fn, shouldRetry, ->
-            callback err, results
+            if soaker
+                soaker err
+                callback null, results
+            else
+                callback err, results
