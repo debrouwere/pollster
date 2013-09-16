@@ -9,8 +9,6 @@ module.exports = (url, callback) ->
         json: yes
 
     request.get params, (err, response, result) ->
-        # TODO: retry logic should not be in an individual facet, but 
-        # it should be in the base class.
         if err or response.statusCode isnt 200 or typeof result is 'string'
             callback new utils.CouldNotFetch()
         else

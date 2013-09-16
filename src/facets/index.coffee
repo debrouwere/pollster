@@ -27,8 +27,9 @@ for facetPath in fs.readdirSync here './'
     facetName = fs.path.basename facetPath, extension
     facetFile = here './', facetPath
     handler = require facetFile
-    stubbornHandler = utils.retry handler, 2, (err) -> console.log 'err', err
+    errorHandler = do (facetName) -> (err) -> console.log "[#{facetName}]", err
+    stubbornHandler = utils.retry handler, 3, errorHandler
     registry[facetName] = stubbornHandler
 
 
-exports.all = ['delicious', 'facebook', 'google-plus', 'linkedin', 'pinterest', 'reddit', 'twitter']
+exports.all = ['delicious', 'facebook', 'google-plus', 'linkedin', 'reddit', 'twitter']

@@ -56,7 +56,7 @@ inquire = (QueueUrl, callback) ->
         done = (err) -> _done err, handle
 
         if data?
-            console.log 'saving data', (utils.serialize.deflate data, '/')
+            #console.log 'saving data', (utils.serialize.deflate data, '/')
             dynamo.putItem namespace, (utils.serialize.deflate data, '/'), done
         else
             done null

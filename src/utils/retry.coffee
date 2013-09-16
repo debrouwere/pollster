@@ -23,7 +23,7 @@ exports.retry = (fn, times, soaker) ->
             return hope and fetchError
 
         async.doWhilst redirected_fn, shouldRetry, ->
-            if soaker
+            if err and soaker
                 soaker err
                 callback null, results
             else
