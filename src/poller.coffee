@@ -38,7 +38,7 @@ Break.prototype = new Error
 # pluck a single message from the queue
 inquire = (QueueUrl, callback) ->
     receive = (done) ->
-        sqs.receiveMessage {QueueUrl}, done
+        sqs.receiveMessage {QueueUrl, WaitTimeSeconds: 20}, done
 
     process = ({Messages}, done) ->
         if not Messages?.length then return done new Break()
@@ -68,17 +68,18 @@ inquire = (QueueUrl, callback) ->
             done null
 
     async.waterfall [receive, process, store, acknowledge], (err) ->
-        if err instanceof Break
-            callback null
-        else
-            callback err
+        # regardless of whether we get the occassional SQS (or other)
+        # error, we don't want to stop polling, but we will log the error
+        if err and not err instanceof Break
+            console.log err
+        
+        callback null
 
 # listen for new messages indefinitely, but one at a time
 # and only once per second at most
 listen = ({QueueUrl}, done) ->
     inquireForQueue = async.apply inquire, QueueUrl
-    niceInquire = utils.debounce inquireForQueue, 1000
-    async.forever niceInquire, done
+    async.forever inquireForQueue, done
 
 
 # initialize and listen

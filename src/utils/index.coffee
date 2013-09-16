@@ -60,15 +60,3 @@ exports.optional = (options, defaults={}) ->
 
 exports.noop = ->
 
-
-# rate limit a function (like an async version of _.debounce)
-exports.debounce = (fn, milliseconds) ->
-    niceFn = ->
-        fnArguments = arguments
-        delay = Math.max 0, milliseconds - (timing.delta niceFn.lastCalled)
-        niceFn.lastCalled = timing.now() + delay
-        setTimeout (-> fn fnArguments...), delay
-
-    niceFn.lastCalled = timing.now()
-
-    niceFn
