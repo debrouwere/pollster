@@ -30,7 +30,9 @@ class Server
 
         @route '/facets*', middleware.normalize
         @route '/facets/', controllers.facets.list
+        @route '/facets/velocity/', controllers.facets.velocity
         @route '/facets/:facet/', controllers.facets.detail
+        @route '/latest/', controllers.facets.latest
 
     listen: (port = 3000) ->
         @app.listen port
@@ -94,7 +96,7 @@ class exports.Pollster extends Server
 
         defaults = 
             facets: []
-            start: new Date()
+            start: -> new Date()
             stop: -> timing.after timing.days 7
             cron: '*/5'
             decay: (timing.days 1)
