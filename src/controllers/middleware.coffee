@@ -4,11 +4,13 @@ _ = require 'underscore'
 params = 
     urls: (req) ->
         if req.query.url
-            [req.query.url]
+            list = [req.query.url]
         else if req.query.urls
-            req.query.urls.split ','
+            list = req.query.urls.split ','
         else
             throw new Error "Need one or more URLs to fetch facets for."
+
+        list.map decodeURIComponent
 
     facets: (req) ->
         # the middleware route specifies the facet (if any) as an asterisk, 

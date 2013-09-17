@@ -90,7 +90,9 @@ exports.velocity =
 
                 duration = (now.timestamp - earlier.timestamp) / (60 * 1000)
                 delta = Math.min 1500, now.twitter - earlier.twitter
-                velocities[url] = 0.01 * Math.round delta / duration
+                velocities[url] =
+                    shares: now.twitter
+                    velocity: 0.01 * Math.round delta / duration
 
             res.send velocities
 

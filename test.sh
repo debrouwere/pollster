@@ -1,1 +1,1 @@
-bin/feedster -i http://content.guardianapis.com/search\?page-size\=5\&format\=json -o http://localhost:3334/facets/ -r response.results -p webUrl
+bin/feedster -i http://content.guardianapis.com/search\?page-size\=5\&format\=json -r response.results -p webUrl
