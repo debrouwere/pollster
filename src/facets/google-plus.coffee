@@ -2,6 +2,8 @@ request = require 'request'
 utils = require '../utils'
 
 module.exports = (url, callback) ->
+    key = process.env.GOOGLEPLUS_SECRET_KEY
+
     # I'm cargo-culting a bit here -- I'm not sure which of these
     # parameters are strictly required.
     params =
@@ -19,8 +21,8 @@ module.exports = (url, callback) ->
             apiVersion: 'v1'
         json: yes
 
-    if process.env.GOOGLEPLUS_SECRET_KEY
-        params.qs.key = process.env.GOOGLEPLUS_SECRET_KEY
+    #if key
+    #    params.qs.key = key
 
     request.post params, (err, response, result) ->
         if err or response.statusCode isnt 200 or not result.result?
