@@ -52,9 +52,6 @@ exports.list =
         queries = _.object req.options.urls.map urlToQuery
 
         async.parallel queries, (err, items) ->
-            # get rid of redundant url field
-
-
             if req.options.single
                 res.send (_.values items)[0]
             else
@@ -73,6 +70,10 @@ exports.list =
                 res.send 201
 
 
+round = (n, decimals) ->
+    0.01 * Math.round n * 100
+
+
 exports.velocity =
     get: (req, res) ->
         # this is wasteful, we don't need to fetch everything, 
@@ -83,18 +84,31 @@ exports.velocity =
             interval = 14 * 60 * 1000
 
             for url, history of items
+                history = _.clone history
                 now = _.last history
-                earlier = _.find history, (data) ->
+                earlier = _.find history.reverse(), (data) ->
                     (now.timestamp - data.timestamp) > interval
                 if not earlier then continue
 
                 duration = (now.timestamp - earlier.timestamp) / (60 * 1000)
-                delta = Math.min 1500, now.twitter - earlier.twitter
+                # what we're interested in for velocity 
+                # is relative difference between 
+                # now and earlier (we need a number that's independent 
+                # of current popularity, but instead documents rise/acceleration)
+                delta = now.twitter / earlier.twitter
                 velocities[url] =
-                    shares: now.twitter
-                    velocity: 0.01 * Math.round delta / duration
+                    shares: [
+                        [earlier.timestamp, earlier.twitter]
+                        [now.timestamp, now.twitter]
+                    ]
+                    velocity: (round delta / duration) or 0
 
-            res.send velocities
+            if req.options.single
+                # perhaps a 404 is more appropriate if there's nothing 
+                # we found?
+                res.send (_.values velocities)[0] or {}
+            else
+                res.send velocities
 
 
 exports.latest =

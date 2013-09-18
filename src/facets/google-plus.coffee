@@ -6,6 +6,7 @@ module.exports = (url, callback) ->
     # parameters are strictly required.
     params =
         uri: 'https://clients6.google.com/rpc'
+        qs: {}
         body: 
             method: 'pos.plusones.get'
             id: 'p'
@@ -18,9 +19,12 @@ module.exports = (url, callback) ->
             apiVersion: 'v1'
         json: yes
 
+    if process.env.GOOGLEPLUS_SECRET_KEY
+        params.qs.key = process.env.GOOGLEPLUS_SECRET_KEY
+
     request.post params, (err, response, result) ->
         if err or response.statusCode isnt 200 or not result.result?
-            callback new utils.CouldNotFetch()
+            callback new utils.CouldNotFetch result?.error?.message
         else
             count = result.result.metadata.globalCounts.count
             callback null, count
