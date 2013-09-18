@@ -10,6 +10,7 @@ program
     .option('-o, --output [uri]', 'pollster endpoint uri')
     .option('-r, --root [path]', 'article root within feed')
     .option('-p, --path [path]', 'path to url within an article')
+    .option('-c, --cron [cron]', 'a custom cron')
     .parse(process.argv)
 
 feedster program

@@ -12,7 +12,7 @@ parseFeed = (options, done) ->
 parseFile = request.get
 
 module.exports = (options) ->
-    {input, root, path, output, feed} = options
+    {input, root, path, output, feed, cron} = options
     output ?= 'http://localhost:3334/facets/'
     parse = if feed then parseFeed else parseFile
 
@@ -29,7 +29,7 @@ module.exports = (options) ->
                     url: url
                 body:
                     replace: no
-                    cron: '*/5'
+                    cron: cron or '*/15'
                     stop: timing.after timing.days 10
                     decay: timing.days 1
                 json: yes     
