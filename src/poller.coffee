@@ -45,7 +45,7 @@ inquire = (QueueUrl, callback) ->
 
         message = Messages[0]
         {url, subset} = JSON.parse message.Body
-        subset ?= facets.all
+        subset ?= facets.safe
         # TODO: make what facets to fetch configurable through the CLI
         facets.poll url, subset, (err, data) ->
             timestamp = utils.timing.now()
@@ -74,8 +74,7 @@ inquire = (QueueUrl, callback) ->
         
         callback null
 
-# listen for new messages indefinitely, but one at a time
-# and only once per second at most
+# listen for new messages indefinitely
 listen = ({QueueUrl}, done) ->
     inquireForQueue = async.apply inquire, QueueUrl
     async.forever inquireForQueue, done

@@ -4,8 +4,6 @@ utils = require '../utils'
 module.exports = (url, callback) ->
     key = process.env.GOOGLEPLUS_SECRET_KEY
 
-    # I'm cargo-culting a bit here -- I'm not sure which of these
-    # parameters are strictly required.
     params =
         uri: 'https://clients6.google.com/rpc'
         qs: {}

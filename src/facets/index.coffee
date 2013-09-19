@@ -32,4 +32,5 @@ for facetPath in fs.readdirSync here './'
     registry[facetName] = stubbornHandler
 
 
-exports.all = ['delicious', 'facebook', 'google-plus', 'linkedin', 'reddit', 'twitter']
+exports.all = ['delicious', 'facebook', 'google-plus', 'pinterest', 'linkedin', 'reddit', 'twitter']
+exports.safe = ['delicious', 'facebook', 'linkedin', 'reddit', 'twitter']
