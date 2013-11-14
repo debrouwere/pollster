@@ -1,5 +1,5 @@
 {
-  "name": "pollster",
+  "name": "pollster-server",
   "version": "0.2.1",
   "description": "Pollster polls for arbitrary metadata about URLs at regular intervals and puts it in a database. It's particularly good at tracking news articles' social share counts over time. Tailored to an AWS stack.",
   "dependencies": {
