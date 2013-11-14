@@ -1,10 +1,12 @@
 ---
 - hosts: pollsters
   vars_prompt:
-  - name: AWS_ACCESS_KEY_ID
-  - name: AWS_SECRET_ACCESS_KEY
-  - name: AWS_REGION
-    default: us-east-1
+  - name: aws_access_key
+    default: "{{ lookup('env','AWS_ACCESS_KEY') }}"
+  - name: aws_secret_key
+    default: "{{ lookup('env','AWS_SECRET_KEY') }}"
+  - name: region
+    default: "{{ lookup('env','EC2_REGION') }}"
   user: ubuntu
   sudo: yes
   tasks:
@@ -20,13 +22,16 @@
   - apt: pkg=redis-server
   - apt: pkg=nginx
   - npm: name=coffee-script state=latest global=yes
-  - npm: name=pollster state=latest global=yes
+  - npm: name=cron-messenger state=latest global=yes
+  - npm: name=pollster-server state=latest global=yes
   - copy: src=bin/cron-messenger.conf dest=/etc/init/cron-messenger.conf
   - template: src=bin/pollster-server.conf dest=/etc/init/pollster-server.conf  
   - template: src=bin/pollster-poller.conf dest=/etc/init/pollster-poller.conf
   - command: initctl reload-configuration
+  - service: name=redis-server state=started
   - service: name=cron-messenger state=started
   - service: name=pollster-server state=started
   - service: name=pollster-poller state=started
   - file: path=/etc/nginx/sites-enabled/default state=absent
-  - copy: src=bin/pollster.nginx.conf dest=/etc/nginx-sites-enabled/pollster
+  - copy: src=bin/pollster.nginx.conf dest=/etc/nginx/sites-enabled/pollster
+  - service: name=nginx state=started
