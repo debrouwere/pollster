@@ -1,0 +1,32 @@
+---
+- hosts: pollsters
+  vars_prompt:
+  - name: AWS_ACCESS_KEY_ID
+  - name: AWS_SECRET_ACCESS_KEY
+  - name: AWS_REGION
+    default: us-east-1
+  user: ubuntu
+  sudo: yes
+  tasks:
+  - apt: update_cache=yes
+  - apt_repository: repo='ppa:chris-lea/node.js'
+  - apt: update_cache=yes
+  - apt: pkg=git
+  - apt: pkg=python-software-properties
+  - apt: pkg=python
+  - apt: pkg=g++
+  - apt: pkg=make
+  - apt: pkg=nodejs
+  - apt: pkg=redis-server
+  - apt: pkg=nginx
+  - npm: name=coffee-script state=latest global=yes
+  - npm: name=pollster state=latest global=yes
+  - copy: src=bin/cron-messenger.conf dest=/etc/init/cron-messenger.conf
+  - template: src=bin/pollster-server.conf dest=/etc/init/pollster-server.conf  
+  - template: src=bin/pollster-poller.conf dest=/etc/init/pollster-poller.conf
+  - command: initctl reload-configuration
+  - service: name=cron-messenger state=started
+  - service: name=pollster-server state=started
+  - service: name=pollster-poller state=started
+  - file: path=/etc/nginx/sites-enabled/default state=absent
+  - copy: src=bin/pollster.nginx.conf dest=/etc/nginx-sites-enabled/pollster
