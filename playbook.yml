@@ -2,11 +2,9 @@
 - hosts: pollsters
   vars_prompt:
   - name: aws_access_key
-    default: "{{ lookup('env','AWS_ACCESS_KEY') }}"
   - name: aws_secret_key
-    default: "{{ lookup('env','AWS_SECRET_KEY') }}"
   - name: region
-    default: "{{ lookup('env','EC2_REGION') }}"
+    default: us-east-1
   user: ubuntu
   sudo: yes
   tasks:
@@ -24,7 +22,7 @@
   - npm: name=coffee-script state=latest global=yes
   - npm: name=cron-messenger state=latest global=yes
   - npm: name=pollster-server state=latest global=yes
-  - copy: src=bin/cron-messenger.conf dest=/etc/init/cron-messenger.conf
+  - template: src=bin/cron-messenger.conf dest=/etc/init/cron-messenger.conf
   - template: src=bin/pollster-server.conf dest=/etc/init/pollster-server.conf  
   - template: src=bin/pollster-poller.conf dest=/etc/init/pollster-poller.conf
   - command: initctl reload-configuration
