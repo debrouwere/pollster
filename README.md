@@ -25,9 +25,9 @@ You will also want to have an [Amazon EC2 Key Pair](http://docs.aws.amazon.com/A
 3. When creating your cluster you specified which keypair to use. With your private key, do `ssh-add ~/.ssh/my-key.pem`
 4. Add your AWS access keys and the desired Pollster configuration to an environment file; you can use `example.env` as a starting point.
 5. `./configure <machine> configuration.env` will upload this configuration to your cluster.
-8. `cd stack/services; fleetctl --tunnel <machine> submit backup.service backup.timer poller@.service scheduler.service store.service submitter.service submitter.timer`
-9. `fleetctl --tunnel <machine> start store scheduler`
-9. `fleetctl --tunnel <machine> load submitter backup`
+6. `cd stack/services; fleetctl --tunnel <machine> submit backup.service backup.timer poller@.service scheduler.service store.service submitter.service submitter.timer`
+7. `fleetctl --tunnel <machine> start store scheduler`
+8. `fleetctl --tunnel <machine> load submitter backup`
 9. `fleetctl --tunnel <machine> start submitter.timer backup.timer`
 10. `fleetctl --tunnel <machine> start poller@{1..3}`
 
