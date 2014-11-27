@@ -1,0 +1,26 @@
+#!/usr/bin/env python
+
+import os
+import subprocess
+from boto.s3.connection import S3Connection
+from boto.s3.key import Key
+
+def backup(config):
+    jobs = subprocess.check_output(['job', 'dump', '--format', 'json'])
+    s3 = S3Connection(
+        config['AWS_ACCESS_KEY_ID'], 
+        config['AWS_SECRET_ACCESS_KEY'], 
+        )
+    bucket = s3.get_bucket(config['POLLSTER_S3'].replace('s3://', ''), 
+        validate=False)  
+    output = Key(bucket)
+    output.key = 'jobs.json'
+    output.content_type = 'application/json'
+    output.set_contents_from_string(jobs)
+
+if __name__ == '__main__':
+    try:
+        backup(os.environ)
+        print 'Backed up jobs to Amazon S3.'
+    except subprocess.CalledProcessError as err:
+        print 'Could not get job listing from Jobs. Redis or the scheduler might be offline.'

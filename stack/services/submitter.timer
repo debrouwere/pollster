@@ -1,0 +1,9 @@
+[Unit]
+Description=article submitter timer
+Requires=submitter.service
+
+[Timer]
+OnCalendar=*:0/5
+
+[X-Fleet]
+MachineOf=submitter.service

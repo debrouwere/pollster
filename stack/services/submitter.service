@@ -1,0 +1,21 @@
+[Unit]
+Description=article submitter
+
+[Service]
+TimeoutStartSec=600
+EnvironmentFile=/etc/environment
+ExecStartPre=/usr/bin/docker pull debrouwere/pollster
+ExecStart=/usr/bin/bash -c "/usr/bin/docker run \
+    --name submitter \
+    --env JOBS_REDIS_HOST=`etcdctl get /jobs/store` \
+    --env ARTICLE_FEED=`etcdctl get /pollster/ARTICLE_FEED` \
+    --env ARTICLE_PATH_TO_URL=`etcdctl get /pollster/ARTICLE_PATH_TO_URL` \
+    --env POLLER_INTERVAL=`etcdctl get /pollster/POLLER_INTERVAL` \
+    --env POLLER_DECAY=`etcdctl get /pollster/POLLER_DECAY` \
+    --env POLLER_DURATION=`etcdctl get /pollster/POLLER_DURATION` \
+    --rm debrouwere/pollster \
+    /pollster/submit"
+# ExecStop=/usr/bin/docker kill submitter
+
+[X-Fleet]
+MachineOf=scheduler.service

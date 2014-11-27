@@ -1,0 +1,9 @@
+[Unit]
+Description=schedule backup service timer
+Requires=scheduler.service
+
+[Timer]
+OnCalendar=hourly
+
+[X-Fleet]
+MachineOf=backup.service

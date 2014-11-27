@@ -1,0 +1,22 @@
+[Unit]
+Description=job scheduler
+After=store.service
+Requires=store.service
+
+[Service]
+Restart=always
+RestartSec=60
+TimeoutStartSec=600
+EnvironmentFile=/etc/environment
+ExecStartPre=/usr/bin/docker pull debrouwere/jobs
+ExecStart=/usr/bin/bash -c "/usr/bin/docker run \
+    --name scheduler \
+    --env JOBS_REDIS_HOST=`etcdctl get /jobs/store` \
+    --rm debrouwere/jobs \
+    job tick"
+ExecStartPost=/usr/bin/etcdctl set /jobs/scheduler ${COREOS_PRIVATE_IPV4}
+ExecStop=/usr/bin/docker kill scheduler
+ExecStopPost=/usr/bin/etcdctl rm /jobs/scheduler
+
+[X-Fleet]
+MachineOf=store.service

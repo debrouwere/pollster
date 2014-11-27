@@ -1,63 +1,45 @@
 # Pollster
 
-Pollster tracks the social lifecycle of your content. How? By collecting metadata about URLs at regular intervals. Find out how content is being shared on Twitter, Facebook and a range of other social media. Do it for your own site or for those of your competitors.
+Pollster follows an article feed, and for every new article it encounters, it starts polling for social media share counts, saving them to DynamoDB and putting them on an SQS queue for further processing.
 
-Think of Pollster as the `cron` of web analytics.
+Pollster relies on [Jobs](https://github.com/debrouwere/jobs) for scheduling.
 
-## Features
+## Installation
 
-* Feed tracking: automatically start tracking new content as you publish it.
-* Tracking windows: track until *x* days after publication.
-* Reduction of granularity over time: poll often at first, poll every once in a while as time goes by.
-* Easily extensible: if it can be polled, you can have it.
-* Accessible through a REST API (there is no GUI), so you can build your own dashboards that display whatever information is relevant for you and your organization – or do any kind of analysis.
-* Scalable: run it on as many servers as you like, and the load will be shared using a message queue to coordinate.
-* Optimized to run on AWS infrastructure: EC2 micro instances, DynamoDB and SQS. (What I really mean is that you probably don't want to try to run it anywhere else.)
+### Local installation
 
-## Why?
+A [Fig](http://www.fig.sh/) configuration is coming.
 
-You'll enjoy Pollster if you're unhappy with the aggregate numbers you're getting out of your current analytics software or the counts and tweets and likes you're getting from Facebook, Twitter or any kind of counter.
+### Installation on a cluster
 
-Traditional analytics software report mostly aggregate numbers. Social media counters only give you the latest tweet and like counts for a web page, not when those tweets and likes were made. Processing tweets with the firehose as they come in is an order of magnitude cheaper than buying historical twitter data. And some things have no history at all: whenever you make a change to a web page, what that page looked like five minutes ago is lost forever.
+Pollster is most easily deployed on Amazon Web Services EC2 machines with [CoreOS](https://coreos.com/). That way, you'll have [Fleet](https://coreos.com/using-coreos/clustering/), [Etcd](https://github.com/coreos/etcd), [Docker](https://www.docker.com/) and AWS autoscaling available out of the box to manage your cluster.
 
-To keep track of how well your content is doing online, when an aggregator picked up a piece, when something is trending and when it disappears off the radar, you need a tool that can track social share counts and various other metrics over time. Not yet other piece of analytics software, but a tool to regularly poll Twitter, Facebook (and perhaps even Google Analytics or Omniture) and any other content metadata for which you want a historical record. Pollster is that tool.
+Before we set up our cluster, install [Fleet](https://coreos.com/docs/launching-containers/launching/fleet-using-the-client/) on your local machine. On OS X this is `brew install fleetctl`.
 
-## Getting started
+(For development, additionally install [Docker](https://www.docker.com/), [Fig](http://www.fig.sh/) and [Jobs](https://github.com/debrouwere/jobs).)
 
-Set up a DynamoDB table. With the Amazon CLI, this should work: 
+You will also want to have an [Amazon EC2 Key Pair](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html) on AWS and your local machine.
 
-    create-table
-        --table-name pollster
-        --key-schema AttributeName=url,KeyType=HASH AttributeName=timestamp,KeyType=RANGE
-        --provisioned-throughput ReadCapacityUnits=10,WriteCapacityUnits=10
+1. Create a CoreOS cluster on Amazon Web Services. Go to your AWS dashboard, navigate to the CloudFormation interface, and click on "Create Stack". Upload the CloudFormation template in this repo at `stack/floudformation.json`. The CloudFormation interface will ask you how many machines you'd like to spin up and a couple of other questions. Then, it will set up your machines, security groups and so on.
+2. Go to the AWS EC2 dashboard and note down the public IP or hostname to one of the machines in your CoreOS cluster -- any machine will do.
+3. When creating your cluster you specified which keypair to use. With your private key, do `ssh-add ~/.ssh/my-key.pem`
+4. Add your AWS access keys and the desired Pollster configuration to an environment file; you can use `example.env` as a starting point.
+5. `./configure <machine> configuration.env` will upload this configuration to your cluster.
+8. `cd stack/services; fleetctl --tunnel <machine> submit backup.service backup.timer poller@.service scheduler.service store.service submitter.service submitter.timer`
+9. `fleetctl --tunnel <machine> start store scheduler`
+9. `fleetctl --tunnel <machine> load submitter backup`
+9. `fleetctl --tunnel <machine> start submitter.timer backup.timer`
+10. `fleetctl --tunnel <machine> start poller@{1..3}`
 
-Wait until the table's been created before proceeding. It'll avoid race conditions.
+Congratulations! You should now have a functional Pollster cluster. Verify with `fleetctl --tunnel <machine> --list-units`.
 
-Spin up a couple of micros – make sure at least one of them is accessible from the outside world on port 80. As a rule, for a daily publication volume of about 100 articles, tracked for 10 days, starting at every 15 minutes, you'll want one micro. Make sure you grab your private key (PEM file) from Amazon so you can actually log into your micros.
+#### Troubleshooting
 
-Pollster should work on any flavor of Linux, but the Ansible playbook depends on Ubuntu.
-
-Add your micros to `/etc/ansible/hosts` under the `[pollsters]` group.
-
-Download `playbook.yml` from the Pollster git repository, and run the Ansible playbook like this: 
-
-    ansible-playbook playbook.yml --private-key ~/.ssh/mykey.pem -u ubuntu
-
-At this point everything should be running. But there's still one more step. You need to tell Pollster where to grab content. Pollster includes a little CLI tool (`feedster`) that can either grab it from an RSS / ATOM feed, or from a JSON file. See `feedster --help` for more information.
-
-Here's how you'd grab the latest articles from The Guardian: 
-
-    feedster -i http://content.guardianapis.com/search\?page-size\=50\&format\=json -root response.results -path webUrl
-
-By default, this will tell Pollster to track all content that you add every 15 minutes (with decay) for a week.
-
-You probably want to add feedster to a cron, so it keeps adding new content: 
-
-    */5 * * * * /usr/bin/feedster ... > $HOME/feedster.log
-
-## API
-
-The main endpoint works like this: 
-
-    /facets/?url=<url>
-    /facets/?urls=<url>,<url>,...
+* Keep into account that, when launching each service, CoreOS will download the latest Jobs and Pollster application images from the public Docker repository. These images are a couple hundred megabytes, so this will take a couple of minutes. If you try to launch things too fast, Fleet can sometimes choke up. In this case, `fleetctl destroy <service>` followed by a fresh `fleetctl submit <service>; fleetctl start <service>` can help.
+* The backup and submitter services are on a timer. It is normal for them to have a `dead` status when they're not running.
+* To inspect failed services, `fleetctl status <my-service>` is your friend, e.g. `fleetctl --tunnel <machine> start poller@1`.
+* Pollster puts share counts in DynamoDB, SQS and also logs each poll with CloudWatch. It also makes a backup of all articles and their polling schedule in S3.
+    * Check the status of `store` and `scheduler` to see if the Jobs scheduler is online.
+    * Check the status of your `poller@n` services to see if these are running. Check the `social-shares` custom metrics in CloudWatch to see if share counts are properly getting saved.
+    * Check your CPU credits in CloudWatch. Performance on your `t2.micro` machines will drop if they don't have any CPU credit left. In this case, you might need to increase the size of your cluster.
+    * Monitor your SQS queue or, alternatively, download a dump from DynamoDB to see if the data is what you expect it to be like.

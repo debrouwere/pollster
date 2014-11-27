@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+http get "$ARTICLE_FEED" \
+    | jq "$ARTICLE_PATH_TO_URL" \
+    | jq '{id: ., runner: "pollster", payload: true}' --compact-output \
+    | job create . . . \
+        --seconds $POLLER_INTERVAL \
+        --lambda $POLLER_DECAY \
+        --duration $POLLER_DURATION \
+        --host $JOBS_REDIS_HOST \
+        --stdin

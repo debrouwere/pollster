@@ -1,1 +1,0 @@
-bin/feedster -i http://content.guardianapis.com/search\?page-size\=5\&format\=json -r response.results -p webUrl
