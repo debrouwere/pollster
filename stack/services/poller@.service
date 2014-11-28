@@ -16,7 +16,7 @@ ExecStart=/usr/bin/bash -c "/usr/bin/docker run \
     --env POLLSTER_CLOUDWATCH=`etcdctl get /pollster/POLLSTER_CLOUDWATCH` \
     --name poller.%i \
     --rm debrouwere/pollster \
-    job respond pollster /pollster/poll"
+    /pollster/poll"
 ExecStop=/usr/bin/docker kill poller.%i
 
 [X-Fleet]

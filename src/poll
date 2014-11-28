@@ -11,6 +11,8 @@ import socialshares
 from boto import dynamodb2, sqs
 from boto.dynamodb2.table import Table
 from boto.ec2 import cloudwatch
+import redisjobs as jobs
+
 
 def flatten(obj, skip=[], connector='_', parent_key=''):
     items = []
@@ -52,7 +54,7 @@ def to_dynamodb(obj, config):
 
 def to_console(url, keys):
     platforms = ', '.join(keys)
-    print 'Fetched {} counts for {}'.format(keys, url)
+    print 'Fetched {} counts for {}'.format(platforms, url)
 
 def to_cloudwatch(keys, config):
     connection = cloudwatch.connect_to_region(
@@ -73,7 +75,8 @@ def env(key):
     password = values.password or os.environ.get('AWS_SECRET_ACCESS_KEY')
     return Credentials(region, username, password)
 
-def fetch(url):
+def fetch(meta):
+    url = meta['id']
     counts = socialshares.fetch(url, ['facebook', 'twitter'])
     platforms = counts.keys()
     item = copy(counts)
@@ -85,5 +88,5 @@ def fetch(url):
     to_console(url, platforms)
 
 if __name__ == '__main__':
-    meta = json.load(sys.stdin)
-    fetch(meta['id'])
+    board = jobs.Board(host=os.environ['JOBS_REDIS_HOST'])
+    board.respond('pollster', fetch)

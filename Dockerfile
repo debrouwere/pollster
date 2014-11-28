@@ -7,5 +7,5 @@ RUN apt-get -y install git jq
 RUN apt-get -y install python python-dev cython python-pip
 # work around a bug with gevent/ssl/python2.7.9+
 RUN pip install git+git://github.com/ellimilial/gevent.git@master
-RUN pip install httpie awscli boto socialshares
+RUN pip install httpie awscli boto socialshares redisjobs
 COPY src /pollster

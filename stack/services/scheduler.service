@@ -13,7 +13,7 @@ ExecStart=/usr/bin/bash -c "/usr/bin/docker run \
     --name scheduler \
     --env JOBS_REDIS_HOST=`etcdctl get /jobs/store` \
     --rm debrouwere/jobs \
-    job tick"
+    job tick --trim 250"
 ExecStartPost=/usr/bin/etcdctl set /jobs/scheduler ${COREOS_PRIVATE_IPV4}
 ExecStop=/usr/bin/docker kill scheduler
 ExecStopPost=/usr/bin/etcdctl rm /jobs/scheduler
