@@ -1,0 +1,18 @@
+[Unit]
+Description=share count backup service
+
+[Service]
+TimeoutStartSec=600
+EnvironmentFile=/etc/environment
+ExecStartPre=/usr/bin/docker pull debrouwere/pollster
+ExecStart=/usr/bin/bash -c "/usr/bin/docker run \
+    --env AWS_REGION=`etcdctl get /pollster/AWS_REGION` \
+    --env AWS_ACCESS_KEY_ID=`etcdctl get /pollster/AWS_ACCESS_KEY_ID` \
+    --env AWS_SECRET_ACCESS_KEY=`etcdctl get /pollster/AWS_SECRET_ACCESS_KEY` \
+    --env POLLSTER_S3=`etcdctl get /pollster/POLLSTER_S3` \
+    --name summarize \
+    --rm debrouwere/pollster \
+    /pollster/summarize"
+
+[X-Fleet]
+MachineOf=scheduler.service

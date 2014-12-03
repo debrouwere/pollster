@@ -1,5 +1,5 @@
 [Unit]
-Description=share count poller
+Description=careful share count poller
 
 [Service]
 Restart=always
@@ -14,10 +14,11 @@ ExecStart=/usr/bin/bash -c "/usr/bin/docker run \
     --env POLLSTER_SQS=`etcdctl get /pollster/POLLSTER_SQS` \
     --env POLLSTER_DYNAMODB=`etcdctl get /pollster/POLLSTER_DYNAMODB` \
     --env POLLSTER_CLOUDWATCH=`etcdctl get /pollster/POLLSTER_CLOUDWATCH` \
-    --name poller.%i \
+    --env CONTAINER=poller.careful.%i \
+    --name poller.careful \
     --rm debrouwere/pollster \
-    /pollster/poll"
-ExecStop=/usr/bin/docker kill poller.%i
+    /pollster/poll careful"
+ExecStop=/usr/bin/docker stop poller.careful
 
 [X-Fleet]
-X-Conflicts=poller@*.service
+X-Conflicts=poller.careful@*.service

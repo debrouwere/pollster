@@ -28,8 +28,8 @@ Parameters:
   ClusterSize:
     Description: Number of nodes in your cluster
     Type: Number
-    Default: 1
-    MinValue: 1
+    Default: 3
+    MinValue: 3
     MaxValue: 10
 
   DiscoveryURL:

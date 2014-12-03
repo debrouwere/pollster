@@ -1,0 +1,9 @@
+[Unit]
+Description=share counts backup service timer
+Requires=summarize.service
+
+[Timer]
+OnCalendar=daily
+
+[X-Fleet]
+MachineOf=summarize.service

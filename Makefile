@@ -1,6 +1,6 @@
-all: build
+all: image
 
-build:
+image:
 	yaml2json stack/cloudformation.yml --indent 2 > stack/cloudformation.json
 	docker build -t debrouwere/pollster .
 

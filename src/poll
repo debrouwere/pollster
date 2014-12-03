@@ -4,6 +4,7 @@ import sys
 import os
 import time
 import json
+import functools
 from copy import copy
 from urlparse import urlparse
 from collections import namedtuple
@@ -56,15 +57,17 @@ def to_console(url, keys):
     platforms = ', '.join(keys)
     print 'Fetched {} counts for {}'.format(platforms, url)
 
-def to_cloudwatch(keys, config):
+def to_cloudwatch(keys, container, config):
     connection = cloudwatch.connect_to_region(
         config.region, 
         aws_access_key_id=config.username, 
         aws_secret_access_key=config.password, 
         )
-    connection.put_metric_data('social-shares', 'any', value=1, unit='Count')
     for key in keys:
-        connection.put_metric_data('social-shares', key, value=1, unit='Count')
+        connection.put_metric_data('social-shares', 'polls', value=1, unit='Count', dimensions={
+            'container': container, 
+            'platform': key, 
+            })
 
 Credentials = namedtuple('Credentials', ['region', 'username', 'password'])
 
@@ -75,18 +78,27 @@ def env(key):
     password = values.password or os.environ.get('AWS_SECRET_ACCESS_KEY')
     return Credentials(region, username, password)
 
-def fetch(meta):
-    url = meta['id']
-    counts = socialshares.fetch(url, ['facebook', 'twitter'])
+def fetch(platforms, meta):
+    url = meta['payload']
+    counts = socialshares.fetch(url, platforms, attempts=1)
     platforms = counts.keys()
     item = copy(counts)
     item['url'] = url
     item['timestamp'] = int(time.time())
     to_sqs(flatten(item), env('POLLSTER_SQS'))
     to_dynamodb(flatten(item), env('POLLSTER_DYNAMODB'))
-    to_cloudwatch(platforms, env('POLLSTER_CLOUDWATCH'))
+    to_cloudwatch(platforms, os.environ['CONTAINER'], env('POLLSTER_CLOUDWATCH'))
     to_console(url, platforms)
+
+schedules = {
+    'frequent': ['facebook', 'twitter'], 
+    'careful': ['facebookfql', 'pinterest', 'reddit', 'linkedin', 'google'], 
+}
 
 if __name__ == '__main__':
     board = jobs.Board(host=os.environ['JOBS_REDIS_HOST'])
-    board.respond('pollster', fetch)
+    schedule = sys.argv[1]
+    platforms = schedules[schedule]
+    fetcher = functools.partial(fetch, platforms)
+    print 'Commence responding to {} jobs'.format(schedule)
+    board.respond('pollster/' + schedule, fetcher)

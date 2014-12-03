@@ -8,14 +8,22 @@ Restart=always
 RestartSec=60
 TimeoutStartSec=600
 EnvironmentFile=/etc/environment
-ExecStartPre=/usr/bin/docker pull debrouwere/jobs
+ExecStartPre=/usr/bin/docker pull debrouwere/pollster
+ExecStartPre=/usr/bin/bash -c "/usr/bin/docker run \
+    --name restore \
+    --env JOBS_REDIS_HOST=`etcdctl get /jobs/store` \
+    --env AWS_ACCESS_KEY_ID=`etcdctl get /pollster/AWS_ACCESS_KEY_ID` \
+    --env AWS_SECRET_ACCESS_KEY=`etcdctl get /pollster/AWS_SECRET_ACCESS_KEY` \
+    --env POLLSTER_S3=`etcdctl get /pollster/POLLSTER_S3` \
+    --rm debrouwere/pollster \
+    /pollster/restore"
 ExecStart=/usr/bin/bash -c "/usr/bin/docker run \
     --name scheduler \
     --env JOBS_REDIS_HOST=`etcdctl get /jobs/store` \
     --rm debrouwere/jobs \
     job tick --trim 250"
 ExecStartPost=/usr/bin/etcdctl set /jobs/scheduler ${COREOS_PRIVATE_IPV4}
-ExecStop=/usr/bin/docker kill scheduler
+ExecStop=/usr/bin/docker stop scheduler
 ExecStopPost=/usr/bin/etcdctl rm /jobs/scheduler
 
 [X-Fleet]

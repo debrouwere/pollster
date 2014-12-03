@@ -1,0 +1,28 @@
+#!/usr/bin/env python
+
+import os
+import json
+from boto.s3.connection import S3Connection
+from boto.s3.key import Key
+import redisjobs as jobs
+
+
+def restore(config):
+    s3 = S3Connection(
+        config['AWS_ACCESS_KEY_ID'], 
+        config['AWS_SECRET_ACCESS_KEY'], 
+        )
+    bucket = s3.get_bucket(config['POLLSTER_S3'].replace('s3://', ''), 
+        validate=False)  
+    output = Key(bucket)
+    output.key = 'jobs.json'
+    raw_state = output.get_contents_as_string()
+    state = json.loads(raw_state)
+    board = jobs.Board(host=config['JOBS_REDIS_HOST'])
+    board.load(state)
+
+
+if __name__ == '__main__':
+    restore(os.environ)
+    print 'Restored jobs from Amazon S3.'
+    # print 'Could not restore job schedule. Redis or the scheduler might be offline.'

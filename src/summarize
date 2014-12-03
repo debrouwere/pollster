@@ -1,0 +1,82 @@
+#!/usr/bin/env python
+
+import sys
+import os
+import time
+from urlparse import urlparse
+import csvkit
+from cStringIO import StringIO
+from datetime import date, timedelta
+from boto import dynamodb2
+from boto.dynamodb2.table import Table
+from boto.s3.connection import S3Connection
+from boto.s3.key import Key
+
+
+fields = [
+    'timestamp', 
+    'url', 
+    'twitter', 
+    'facebook', 
+    'facebookfql_likes', 
+    'facebookfql_shares', 
+    'facebookfql_comments', 
+    'google', 
+    'linkedin', 
+    'reddit_ups', 
+    'reddit_downs', 
+    'pinterest', 
+    ]
+
+
+def timestamp(date):
+    return time.mktime(date.timetuple())
+
+def get_counts(start, stop, config):
+    dynamo = dynamodb2.connect_to_region(
+        config['AWS_REGION'], 
+        aws_access_key_id=config['AWS_ACCESS_KEY_ID'], 
+        aws_secret_access_key=config['AWS_SECRET_ACCESS_KEY'], 
+        )
+    table = Table('social-shares', connection=dynamo)
+    return table.scan(
+        timestamp__gte=timestamp(start), 
+        timestamp__lt=timestamp(stop), 
+        )
+
+def serialize_items(items, config):
+    buff = StringIO()
+    out = csvkit.CSVKitDictWriter(buff, fields)
+    out.writeheader()
+
+    for i, item in enumerate(items):
+        if i % 1000 == 0:
+            sys.stdout.write('.')
+        out.writerow(item)
+
+    return buff.getvalue()
+
+def to_s3(name, contents, config):
+    s3 = S3Connection(
+        config['AWS_ACCESS_KEY_ID'], 
+        config['AWS_SECRET_ACCESS_KEY'], 
+        )
+    location = urlparse(config['POLLSTER_S3'])
+    bucket = s3.get_bucket(location.hostname, validate=False)  
+    output = Key(bucket)
+    output.key = os.path.join(location.path.lstrip('/'), name)
+    output.content_type = 'text/csv'
+    output.set_contents_from_string(contents)
+
+def summarize(config):
+    stop = date.today()
+    start = stop - timedelta(days=1)
+    name = start.isoformat() + '.csv'
+    counts = get_counts(start, stop, config)
+    serialized_counts = serialize_items(counts, config)
+    to_s3(name, serialized_counts, config)
+    return name
+
+if __name__ == '__main__':
+    out = summarize(os.environ)
+    print "Saved yesterday's share counts to S3: " + out

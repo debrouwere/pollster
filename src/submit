@@ -1,11 +1,46 @@
-#!/usr/bin/env bash
+#!/usr/bin/env python
 
-http get "$ARTICLE_FEED" \
-    | jq "$ARTICLE_PATH_TO_URL" \
-    | jq '{id: ., runner: "pollster", payload: true}' --compact-output \
-    | job create . . . \
-        --seconds $POLLER_INTERVAL \
-        --lambda $POLLER_DECAY \
-        --duration $POLLER_DURATION \
-        --host $JOBS_REDIS_HOST \
-        --stdin
+import os
+import requests
+import redisjobs as jobs
+
+
+def traverse(obj, segments):
+    if isinstance(segments, basestring):
+        segments = segments.split('.')
+
+    if len(segments):
+        if isinstance(obj, list):
+            return [traverse(item, segments) for item in obj]
+        else:
+            head = segments[0]
+            tail = segments[1:]
+            obj = obj[head]
+            return traverse(obj, tail)
+    else:
+        return obj
+
+
+def submit(config):
+    feed = requests.get(config['ARTICLE_FEED']).json()
+    urls = traverse(feed, config['ARTICLE_PATH_TO_URL'])
+    board = jobs.Board(host=config['JOBS_REDIS_HOST'])
+    for url in urls:
+        for schedule in ['frequent', 'careful']:
+            runner = 'pollster/' + schedule
+            job_id = runner + ':' + url
+            interval = int(config['POLLER_' + schedule.upper() + '_INTERVAL'])
+            board.create(
+                id=job_id, 
+                runner=runner, 
+                payload=url, 
+                seconds=interval, 
+                duration=int(config['POLLER_DURATION']), 
+                decay=float(config['POLLER_DECAY']), 
+                )
+
+    return urls
+
+if __name__ == '__main__':
+    urls = submit(os.environ)
+    print "Submitted {} urls.".format(len(urls))
