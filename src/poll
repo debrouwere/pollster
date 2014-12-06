@@ -11,8 +11,13 @@ from collections import namedtuple
 import socialshares
 from boto import dynamodb2, sqs
 from boto.dynamodb2.table import Table
+from boto.dynamodb2.exceptions import ConditionalCheckFailedException
 from boto.ec2 import cloudwatch
 import redisjobs as jobs
+
+
+# unbuffered standard output
+sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
 
 
 def flatten(obj, skip=[], connector='_', parent_key=''):
@@ -44,14 +49,26 @@ def to_sqs(obj, config):
     message.set_body(json.dumps(obj))
     queue.write(message)
 
-def to_dynamodb(obj, config):
+def get_keys(obj):
+    return dict(url=obj['url'], timestamp=obj['timestamp'])
+
+def to_dynamodb(data, config):
     connection = dynamodb2.connect_to_region(
         config.region,
         aws_access_key_id=config.username,
         aws_secret_access_key=config.password,
         )
     table = Table('social-shares', connection=connection)
-    table.put_item(data=obj)
+
+    # occassionally, a careful and frequent poller will try 
+    # to put data into DynamoDB at the same time, leading
+    # to a timestamp+url key clash
+    try:
+        table.put_item(data=data)
+    except ConditionalCheckFailedException:
+        obj = table.get_item(**get_keys(data))
+        obj._data.update(data)
+        obj.save()
 
 def to_console(url, keys):
     platforms = ', '.join(keys)
@@ -92,7 +109,7 @@ def fetch(platforms, meta):
 
 schedules = {
     'frequent': ['facebook', 'twitter'], 
-    'careful': ['facebookfql', 'pinterest', 'reddit', 'linkedin', 'google'], 
+    'careful': ['facebookfql', 'pinterest', 'linkedin', 'google'], 
 }
 
 if __name__ == '__main__':
