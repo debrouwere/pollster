@@ -19,6 +19,7 @@ ExecStart=/usr/bin/bash -c "/usr/bin/docker run \
     --rm debrouwere/pollster \
     /pollster/poll careful"
 ExecStop=/usr/bin/docker stop poller.careful
+ExecStop=/usr/bin/docker rm poller.careful
 
 [X-Fleet]
 X-Conflicts=poller.careful@*.service

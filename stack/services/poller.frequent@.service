@@ -19,6 +19,7 @@ ExecStart=/usr/bin/bash -c "/usr/bin/docker run \
     --rm debrouwere/pollster \
     /pollster/poll frequent"
 ExecStop=/usr/bin/docker stop poller.frequent
+ExecStopPost=/usr/bin/docker rm poller.frequent
 
 [X-Fleet]
 X-Conflicts=poller.frequent@*.service
