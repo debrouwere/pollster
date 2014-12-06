@@ -10,7 +10,13 @@ import redisjobs as jobs
 
 def backup(config):
     board = jobs.Board(host=config['JOBS_REDIS_HOST'])
-    dump = json.dumps(board.dump())
+    serialization = board.dump()
+
+    if not len(serialization):
+        return False
+
+    dump = json.dumps(serialization)
+
     s3 = S3Connection(
         config['AWS_ACCESS_KEY_ID'], 
         config['AWS_SECRET_ACCESS_KEY'], 
@@ -22,8 +28,10 @@ def backup(config):
     output.content_type = 'application/json'
     output.set_contents_from_string(dump)
 
+    return True
+
 
 if __name__ == '__main__':
-    backup(os.environ)
-    print 'Backed up jobs to Amazon S3.'
+    if backup(os.environ):
+        print 'Backed up jobs to Amazon S3.'
     #print 'Could not get job listing from Jobs. Redis or the scheduler might be offline.'
