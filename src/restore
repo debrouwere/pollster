@@ -20,9 +20,10 @@ def restore(config):
     state = json.loads(raw_state)
     board = jobs.Board(host=config['JOBS_REDIS_HOST'])
     board.load(state)
+    return state['jobs'].keys()
 
 
 if __name__ == '__main__':
-    restore(os.environ)
-    print 'Restored jobs from Amazon S3.'
+    keys = restore(os.environ)
+    print 'Restored {} jobs from Amazon S3.'.format(len(keys))
     # print 'Could not restore job schedule. Redis or the scheduler might be offline.'

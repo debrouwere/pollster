@@ -8,5 +8,5 @@ RUN apt-get -y install python python-dev python-pip
 RUN apt-get -y install cython git
 RUN pip install git+git://github.com/ellimilial/gevent.git@master
 RUN pip install requests boto csvkit
-RUN pip install socialshares redisjobs==0.3.2
+RUN pip install socialshares redisjobs==0.4.1
 COPY src /pollster

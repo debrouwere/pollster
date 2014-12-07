@@ -1,8 +1,10 @@
 # Pollster
 
-Pollster follows an article feed, and for every new article it encounters, it starts polling for social media share counts, saving them to DynamoDB and putting them on an SQS queue for further processing.
+Pollster follows an article feed, and for every new article it encounters, it starts polling for social media share counts, saving them to DynamoDB and putting them on an SQS queue for further processing. At the end of the day, all share counts for that day are additionally persisted to S3 for easy analysis.
 
-Pollster relies on [Jobs](https://github.com/debrouwere/jobs) for scheduling.
+Pollster polls often for services that can handle it (Twitter, Facebook) and less often for services that can't (Pinterest, LinkedIn etc.)
+
+Pollster relies on [Jobs](https://github.com/debrouwere/jobs) for scheduling and [Fleet](https://coreos.com/using-coreos/clustering/) for clustering.
 
 ## Installation
 
@@ -24,19 +26,29 @@ You will also want to have an [Amazon EC2 Key Pair](http://docs.aws.amazon.com/A
 2. Go to the AWS EC2 dashboard and note down the public IP or hostname to one of the machines in your CoreOS cluster -- any machine will do.
 3. When creating your cluster you specified which keypair to use. With your private key, do `ssh-add ~/.ssh/my-key.pem`
 4. Add your AWS access keys and the desired Pollster configuration to an environment file; you can use `example.env` as a starting point.
-5. `./configure <machine> configuration.env` will upload this configuration to your cluster.
-6. `cd stack/services; fleetctl --tunnel <machine> submit backup.service backup.timer poller@.service scheduler.service store.service submitter.service submitter.timer`
-7. `fleetctl --tunnel <machine> start store scheduler`
-8. `fleetctl --tunnel <machine> load submitter backup`
-9. `fleetctl --tunnel <machine> start submitter.timer backup.timer`
-10. `fleetctl --tunnel <machine> start poller@{1..3}`
+5. `./utils/configure <machine> <configuration>.env` will upload this configuration to your cluster.
+6. Start all required services.
+
+```shell
+cd stack/services
+# if you don't have `repl` installed, prefix `fleetctl --tunnel <machine>`
+# onto each command that follows
+repl fleetctl --tunnel <machine>
+submit *.service *.timer
+start store
+start scheduler
+start poller.careful@{1..3}
+start poller.frequent@{1..3}
+load backup submitter summarize
+start backup.timer submitter.timer summarize.timer
+```
 
 Congratulations! You should now have a functional Pollster cluster. Verify with `fleetctl --tunnel <machine> --list-units`.
 
 #### Troubleshooting
 
-* Keep into account that, when launching each service, CoreOS will download the latest Jobs and Pollster application images from the public Docker repository. These images are a couple hundred megabytes, so this will take a couple of minutes. If you try to launch things too fast, Fleet can sometimes choke up. In this case, `fleetctl destroy <service>` followed by a fresh `fleetctl submit <service>; fleetctl start <service>` can help.
-* The backup and submitter services are on a timer. It is normal for them to have a `dead` status when they're not running.
+* Keep into account that, when launching each service, CoreOS will download the latest Redis, Jobs and Pollster application images from the public Docker repository. These images are a couple hundred megabytes, so this will take a couple of minutes. If you try to launch things too fast, Fleet can sometimes choke up. In this case, `fleetctl destroy <service>` followed by a fresh `fleetctl submit <service>; fleetctl start <service>` can help.
+* The backup, submitter and summarize services are on a timer. It is normal for them to have a `dead` status when they're not running, and their related timers to read `active, waiting`.
 * To inspect failed services, `fleetctl status <my-service>` is your friend, e.g. `fleetctl --tunnel <machine> start poller@1`.
 * Pollster puts share counts in DynamoDB, SQS and also logs each poll with CloudWatch. It also makes a backup of all articles and their polling schedule in S3.
     * Check the status of `store` and `scheduler` to see if the Jobs scheduler is online.
