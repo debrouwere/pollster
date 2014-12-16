@@ -24,9 +24,9 @@ ExecStart=/usr/bin/bash -c "/usr/bin/docker run \
     --rm debrouwere/jobs \
     job tick --trim `etcdctl get /pollster/QUEUE_TRIM`"
 ExecStartPost=/usr/bin/etcdctl set /jobs/scheduler ${COREOS_PRIVATE_IPV4}
-ExecStop=/usr/bin/docker stop scheduler
+ExecStop=-/usr/bin/docker stop scheduler
+ExecStopPost=-/usr/bin/docker rm scheduler
 ExecStopPost=/usr/bin/etcdctl rm /jobs/scheduler
-ExecStopPost=/usr/bin/docker rm scheduler
 
 [X-Fleet]
 MachineOf=store.service

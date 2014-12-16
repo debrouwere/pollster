@@ -13,6 +13,8 @@ ExecStart=/usr/bin/bash -c "/usr/bin/docker run \
     --name summarize \
     --rm debrouwere/pollster \
     /pollster/summarize"
+ExecStop=-/usr/bin/docker stop summarize
+ExecStopPost=-/usr/bin/docker rm summarize
 
 [X-Fleet]
 MachineOf=scheduler.service

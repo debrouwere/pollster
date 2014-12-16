@@ -16,6 +16,8 @@ ExecStart=/usr/bin/bash -c "/usr/bin/docker run \
     --env POLLER_DURATION=`etcdctl get /pollster/POLLER_DURATION` \
     --rm debrouwere/pollster \
     /pollster/submit"
+ExecStop=-/usr/bin/docker stop submitter
+ExecStopPost=-/usr/bin/docker rm submitter
 
 [X-Fleet]
 MachineOf=scheduler.service
