@@ -10,7 +10,12 @@ TimeoutStartSec=600
 EnvironmentFile=/etc/environment
 ExecStartPre=/usr/bin/docker pull debrouwere/jobs
 ExecStartPre=/usr/bin/docker pull debrouwere/pollster
-ExecStartPre=/usr/bin/bash -c "/usr/bin/docker run \
+ExecStart=/usr/bin/bash -c "/usr/bin/docker run \
+    --name scheduler \
+    --env JOBS_REDIS_HOST=`etcdctl get /jobs/store` \
+    --rm debrouwere/jobs \
+    job tick --trim `etcdctl get /pollster/QUEUE_TRIM`"
+ExecStartPost=/usr/bin/bash -c "/usr/bin/docker run \
     --name restore \
     --env JOBS_REDIS_HOST=`etcdctl get /jobs/store` \
     --env AWS_ACCESS_KEY_ID=`etcdctl get /pollster/AWS_ACCESS_KEY_ID` \
@@ -18,11 +23,6 @@ ExecStartPre=/usr/bin/bash -c "/usr/bin/docker run \
     --env POLLSTER_S3=`etcdctl get /pollster/POLLSTER_S3` \
     --rm debrouwere/pollster \
     /pollster/restore"
-ExecStart=/usr/bin/bash -c "/usr/bin/docker run \
-    --name scheduler \
-    --env JOBS_REDIS_HOST=`etcdctl get /jobs/store` \
-    --rm debrouwere/jobs \
-    job tick --trim `etcdctl get /pollster/QUEUE_TRIM`"
 ExecStartPost=/usr/bin/etcdctl set /jobs/scheduler ${COREOS_PRIVATE_IPV4}
 ExecStop=-/usr/bin/docker stop scheduler
 ExecStopPost=-/usr/bin/docker rm scheduler
