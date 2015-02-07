@@ -1,10 +1,3 @@
-; TODO: guarantee persistence of data volume
-; 
-; NOTE: you can have as many ExecStartPre commands as you 
-; need, so this is great for setting jobs that definitely
-; need to run (individually or, in the future, by reading
-; a job board)
-
 [Unit]
 Description=job store
 
@@ -13,9 +6,22 @@ Restart=always
 RestartSec=10
 TimeoutStartSec=600
 EnvironmentFile=/etc/environment
+ExecStartPre=-/usr/bin/docker kill redis
+ExecStartPre=-/usr/bin/docker rm redis
 ExecStartPre=/usr/bin/docker pull redis
 ExecStart=/usr/bin/docker run --name store -p 6379:6379 --rm redis
-ExecStartPost=/usr/bin/etcdctl set /jobs/store ${COREOS_PRIVATE_IPV4}
-ExecStop=-/usr/bin/docker stop store
-ExecStopPost=/usr/bin/etcdctl rm /jobs/store
-ExecStopPost=-/usr/bin/docker rm store
+ExecStartPost=/usr/bin/etcdctl set /pollster/JOBS_REDIS_HOST ${COREOS_PRIVATE_IPV4}
+ExecStop=/usr/bin/docker stop store
+ExecStopPost=/usr/bin/etcdctl rm /pollster/JOBS_REDIS_HOST
+ExecStartPost=aws cloudwatch put-metric-data \
+    --namespace social-shares \
+    --metric-name start \
+    --dimensions type=scheduler,container=store \
+    --value 1 \
+    --unit Count
+ExecStopPost=aws cloudwatch put-metric-data \
+    --namespace social-shares \
+    --metric-name stop \
+    --dimensions type=scheduler,container=store \
+    --value 1 \
+    --unit Count

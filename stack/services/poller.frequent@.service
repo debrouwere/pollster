@@ -5,21 +5,32 @@ Description=frequent share count poller
 Restart=always
 RestartSec=60
 TimeoutStartSec=600
-EnvironmentFile=/etc/environment
+ExecStartPre=-/usr/bin/docker kill poller.frequent
+ExecStartPre=-/usr/bin/docker rm poller.frequent
 ExecStartPre=/usr/bin/docker pull debrouwere/pollster
-ExecStart=/usr/bin/bash -c "/usr/bin/docker run \
-    --env JOBS_REDIS_HOST=`etcdctl get /jobs/store` \
-    --env AWS_ACCESS_KEY_ID=`etcdctl get /pollster/AWS_ACCESS_KEY_ID` \
-    --env AWS_SECRET_ACCESS_KEY=`etcdctl get /pollster/AWS_SECRET_ACCESS_KEY` \
-    --env POLLSTER_SQS=`etcdctl get /pollster/POLLSTER_SQS` \
-    --env POLLSTER_DYNAMODB=`etcdctl get /pollster/POLLSTER_DYNAMODB` \
-    --env POLLSTER_CLOUDWATCH=`etcdctl get /pollster/POLLSTER_CLOUDWATCH` \
-    --env CONTAINER=poller.frequent.%i \
+ExecStartPre=/usr/bin/curl \
+    -o /home/core/etcsnapshot \
+    https://raw.githubusercontent.com/debrouwere/pollster/master/src/etcsnapshot.sh
+ExecStartPre=/usr/bin/bash /home/core/etcsnapshot
+EnvironmentFile=/etc/environment
+EnvironmentFile=/tmp/etc/pollster
+ExecStart=/usr/bin/docker run \
     --name poller.frequent \
-    --rm debrouwere/pollster \
-    /pollster/poll frequent"
-ExecStop=-/usr/bin/docker stop poller.frequent
-ExecStopPost=-/usr/bin/docker rm poller.frequent
+    --env-file /tmp/etc/pollster \
+    debrouwere/pollster /pollster/poll frequent
+ExecStop=/usr/bin/docker stop poller.frequent
+ExecStartPost=aws cloudwatch put-metric-data \
+    --namespace social-shares \
+    --metric-name start \
+    --dimensions type=poller,container=poller.frequent.%i \
+    --value 1 \
+    --unit Count
+ExecStopPost=aws cloudwatch put-metric-data \
+    --namespace social-shares \
+    --metric-name stop \
+    --dimensions type=poller,container=poller.frequent.%i \
+    --value 1 \
+    --unit Count
 
 [X-Fleet]
 X-Conflicts=poller.frequent@*.service

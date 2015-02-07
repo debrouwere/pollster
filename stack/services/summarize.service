@@ -3,18 +3,27 @@ Description=share count backup service
 
 [Service]
 TimeoutStartSec=600
-EnvironmentFile=/etc/environment
+TimeoutStopSec=1200
+ExecStartPre=-/usr/bin/docker kill summarize
+ExecStartPre=-/usr/bin/docker rm summarize
 ExecStartPre=/usr/bin/docker pull debrouwere/pollster
-ExecStart=/usr/bin/bash -c "/usr/bin/docker run \
-    --env AWS_REGION=`etcdctl get /pollster/AWS_REGION` \
-    --env AWS_ACCESS_KEY_ID=`etcdctl get /pollster/AWS_ACCESS_KEY_ID` \
-    --env AWS_SECRET_ACCESS_KEY=`etcdctl get /pollster/AWS_SECRET_ACCESS_KEY` \
-    --env POLLSTER_S3=`etcdctl get /pollster/POLLSTER_S3` \
+ExecStartPre=/usr/bin/curl \
+    -o /home/core/etcsnapshot \
+    https://raw.githubusercontent.com/debrouwere/pollster/master/src/etcsnapshot.sh
+ExecStartPre=/usr/bin/bash /home/core/etcsnapshot
+EnvironmentFile=/etc/environment
+EnvironmentFile=/tmp/etc/pollster
+ExecStart=/usr/bin/docker run \
     --name summarize \
-    --rm debrouwere/pollster \
-    /pollster/summarize"
-ExecStop=-/usr/bin/docker stop summarize
-ExecStopPost=-/usr/bin/docker rm summarize
+    --env-file /tmp/etc/pollster \
+    debrouwere/pollster /pollster/summarize
+ExecStop=/usr/bin/docker stop summarize
+ExecStopPost=aws cloudwatch put-metric-data \
+    --namespace social-shares \
+    --metric-name stop \
+    --dimensions type=timer,container=summarize \
+    --value 1 \
+    --unit Count
 
 [X-Fleet]
 MachineOf=scheduler.service

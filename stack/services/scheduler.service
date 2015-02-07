@@ -7,26 +7,41 @@ Requires=store.service
 Restart=always
 RestartSec=60
 TimeoutStartSec=600
-EnvironmentFile=/etc/environment
+ExecStartPre=-/usr/bin/docker kill scheduler
+ExecStartPre=-/usr/bin/docker kill restore
+ExecStartPre=-/usr/bin/docker rm scheduler
+ExecStartPre=-/usr/bin/docker rm restore
 ExecStartPre=/usr/bin/docker pull debrouwere/jobs
 ExecStartPre=/usr/bin/docker pull debrouwere/pollster
-ExecStart=/usr/bin/bash -c "/usr/bin/docker run \
+ExecStartPre=/usr/bin/curl \
+    -o /home/core/etcsnapshot \
+    https://raw.githubusercontent.com/debrouwere/pollster/master/src/etcsnapshot.sh
+ExecStartPre=/usr/bin/bash /home/core/etcsnapshot
+EnvironmentFile=/etc/environment
+EnvironmentFile=/tmp/etc/pollster
+ExecStart=/usr/bin/docker run \
     --name scheduler \
-    --env JOBS_REDIS_HOST=`etcdctl get /jobs/store` \
-    --rm debrouwere/jobs \
-    job tick --trim `etcdctl get /pollster/QUEUE_TRIM`"
-ExecStartPost=/usr/bin/bash -c "/usr/bin/docker run \
+    --env-file /tmp/etc/pollster \
+    debrouwere/jobs job tick
+ExecStartPost=/usr/bin/docker run \
     --name restore \
-    --env JOBS_REDIS_HOST=`etcdctl get /jobs/store` \
-    --env AWS_ACCESS_KEY_ID=`etcdctl get /pollster/AWS_ACCESS_KEY_ID` \
-    --env AWS_SECRET_ACCESS_KEY=`etcdctl get /pollster/AWS_SECRET_ACCESS_KEY` \
-    --env POLLSTER_S3=`etcdctl get /pollster/POLLSTER_S3` \
-    --rm debrouwere/pollster \
-    /pollster/restore"
-ExecStartPost=/usr/bin/etcdctl set /jobs/scheduler ${COREOS_PRIVATE_IPV4}
-ExecStop=-/usr/bin/docker stop scheduler
-ExecStopPost=-/usr/bin/docker rm scheduler
-ExecStopPost=/usr/bin/etcdctl rm /jobs/scheduler
+    --env-file /tmp/etc/pollster \
+    debrouwere/pollster /pollster/restore
+ExecStartPost=/usr/bin/etcdctl set /pollster/JOBS_SCHEDULER ${COREOS_PRIVATE_IPV4}
+ExecStop=/usr/bin/docker stop scheduler
+ExecStopPost=/usr/bin/etcdctl rm /pollster/JOBS_SCHEDULER
+ExecStartPost=aws cloudwatch put-metric-data \
+    --namespace social-shares \
+    --metric-name start \
+    --dimensions type=scheduler,container=scheduler \
+    --value 1 \
+    --unit Count
+ExecStopPost=aws cloudwatch put-metric-data \
+    --namespace social-shares \
+    --metric-name stop \
+    --dimensions type=scheduler,container=scheduler \
+    --value 1 \
+    --unit Count
 
 [X-Fleet]
 MachineOf=store.service

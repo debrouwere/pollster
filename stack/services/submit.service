@@ -1,27 +1,27 @@
 [Unit]
-Description=schedule backup service
+Description=article submitter
 
 [Service]
 TimeoutStartSec=600
-ExecStartPre=-/usr/bin/docker kill backup
-ExecStartPre=-/usr/bin/docker rm backup
+ExecStartPre=-/usr/bin/docker kill submit
+ExecStartPre=-/usr/bin/docker rm submit
 ExecStartPre=/usr/bin/docker pull debrouwere/pollster
+EnvironmentFile=/etc/environment
 ExecStartPre=/usr/bin/curl \
     -o /home/core/etcsnapshot \
-    https://raw.githubusercontent.com/debrouwere/pollster/master/src/etcsnapshot.sh
+    https://raw.githubusercontent.com/debrouwere/pollster/master/src/etcsnapshot
 ExecStartPre=/usr/bin/bash /home/core/etcsnapshot
-EnvironmentFile=/etc/environment
-EnvironmentFile=/tmp/etc/pollster
 ExecStart=/usr/bin/docker run \
-    --name backup \
+    --name submit \
     --env-file /tmp/etc/pollster \
-    debrouwere/pollster /pollster/backup
-ExecStop=/usr/bin/docker stop backup
+    debrouwere/pollster /pollster/submit
+ExecStop=/usr/bin/docker stop submit
 ExecStopPost=aws cloudwatch put-metric-data \
     --namespace social-shares \
     --metric-name stop \
-    --dimensions type=timer,container=backup \
+    --dimensions type=timer,container=submit \
     --value 1 \
     --unit Count
+
 [X-Fleet]
 MachineOf=scheduler.service
