@@ -6,11 +6,14 @@ import time
 from urlparse import urlparse
 import csvkit
 from cStringIO import StringIO
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from boto import dynamodb2
 from boto.dynamodb2.table import Table
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
+
+
+sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
 
 
 fields = [
@@ -30,53 +33,76 @@ fields = [
 
 
 def timestamp(date):
-    return time.mktime(date.timetuple())
+    return int(time.mktime(date.timetuple()))
 
-def get_counts(start, stop, config):
+def get_counts(start, stop):
     dynamo = dynamodb2.connect_to_region(
-        config['AWS_REGION'], 
-        aws_access_key_id=config['AWS_ACCESS_KEY_ID'], 
-        aws_secret_access_key=config['AWS_SECRET_ACCESS_KEY'], 
+        os.environ['AWS_REGION'], 
+        aws_access_key_id=os.environ['AWS_ACCESS_KEY_ID'], 
+        aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'], 
         )
     table = Table('social-shares', connection=dynamo)
     return table.scan(
-        timestamp__gte=timestamp(start), 
-        timestamp__lt=timestamp(stop), 
+        timestamp__between=[timestamp(start), timestamp(stop) - 1], 
         )
 
-def serialize_items(items, config):
+def serialize_items(items):
     buff = StringIO()
     out = csvkit.CSVKitDictWriter(buff, fields)
     out.writeheader()
 
-    for i, item in enumerate(items):
-        if i % 1000 == 0:
-            sys.stdout.write('.')
+    for item in items:
         out.writerow(item)
 
     return buff.getvalue()
 
-def to_s3(name, contents, config):
+def to_s3(name, contents):
     s3 = S3Connection(
-        config['AWS_ACCESS_KEY_ID'], 
-        config['AWS_SECRET_ACCESS_KEY'], 
+        os.environ['AWS_ACCESS_KEY_ID'], 
+        os.environ['AWS_SECRET_ACCESS_KEY'], 
         )
-    location = urlparse(config['POLLSTER_S3'])
+    location = urlparse(os.environ['POLLSTER_S3'])
     bucket = s3.get_bucket(location.hostname, validate=False)  
     output = Key(bucket)
     output.key = os.path.join(location.path.lstrip('/'), name)
     output.content_type = 'text/csv'
     output.set_contents_from_string(contents)
 
-def summarize(config):
-    stop = date.today()
-    start = stop - timedelta(days=1)
+def summarize_day(start):
+    timer = datetime.now()
+
     name = start.isoformat() + '.csv'
-    counts = get_counts(start, stop, config)
-    serialized_counts = serialize_items(counts, config)
-    to_s3(name, serialized_counts, config)
-    return name
+    stop = start + timedelta(days=1)
+    counts = list(get_counts(start, stop))
+    serialized_counts = serialize_items(counts)
+    to_s3(name, serialized_counts)
+
+    duration = (datetime.now() - timer).total_seconds()
+    return (name, (len(counts), duration))
+
+def summarize(start=None, stop=None):
+    if isinstance(start, basestring):
+        start = datetime.strptime(start, '%Y-%m-%d').date()
+    if isinstance(stop, basestring):
+        stop = datetime.strptime(stop, '%Y-%m-%d').date()
+
+    stop = stop or date.today()
+    start = start or stop - timedelta(days=1)
+    duration = stop - start
+    days = [start + timedelta(days=i) for i in range(duration.days)]
+    return dict([summarize_day(day) for day in days])
+
+def argv(i):
+    if len(sys.argv) > i:
+        return sys.argv[i]
+    else:
+        return None
 
 if __name__ == '__main__':
-    out = summarize(os.environ)
-    print "Saved yesterday's share counts to S3: " + out
+    counts = summarize(argv(1), argv(2))
+    for filename, meta in counts.items():
+        print "Saved share counts to S3: {filename} ({counts} rows in {s} seconds)".format(
+            filename=filename, 
+            counts=meta[0], 
+            s=int(round(meta[1])),
+            )
