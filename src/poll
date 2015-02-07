@@ -117,5 +117,5 @@ if __name__ == '__main__':
     schedule = sys.argv[1]
     platforms = schedules[schedule]
     fetcher = functools.partial(fetch, platforms)
-    print 'Commence responding to {} jobs'.format(schedule)
+    print 'Start responding to {} jobs'.format(schedule)
     board.respond('pollster/' + schedule, fetcher)
