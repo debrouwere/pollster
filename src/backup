@@ -9,11 +9,16 @@ import redisjobs as jobs
 
 
 def backup(config):
-    board = jobs.Board(host=config['JOBS_REDIS_HOST'])
-    serialization = board.dump()
+    try:
+        board = jobs.Board(host=config['JOBS_REDIS_HOST'])
+        serialization = board.dump()
+    except:
+        raise IOError('Could not get job listing from Jobs. Redis or the scheduler might be offline.')
 
-    if not len(serialization):
-        return False
+    count = len(serialization['jobs']):
+
+    if not count:
+        return 0
 
     dump = json.dumps(serialization)
 
@@ -28,10 +33,13 @@ def backup(config):
     output.content_type = 'application/json'
     output.set_contents_from_string(dump)
 
-    return True
+    return count
 
 
 if __name__ == '__main__':
-    if backup(os.environ):
-        print 'Backed up jobs to Amazon S3.'
-    #print 'Could not get job listing from Jobs. Redis or the scheduler might be offline.'
+    # TODO: put on cloudwatch as well
+    count = backup(os.environ)
+    if count:
+        print 'Backed up {} jobs to Amazon S3.'.format(count)
+    else:
+        print 'Skipped backup. The scheduler responded but did not have any jobs.'
