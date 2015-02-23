@@ -1,0 +1,21 @@
+#!/usr/bin/env python3
+
+"""
+Count jobs, scheduled jobs, runners and queue sizes.
+"""
+
+import redisjobs as jobs
+board = jobs.Board(host=os.environ['JOBS_REDIS_HOST'])
+counts = board.count()
+queues = counts['queues']
+counts['queues'] = len(queues)
+
+for key, count in counts.items():
+    if isinstance(count, dict):
+        for sub_key, sub_count in count.items():
+            to_cloudwatch('social-shares', sub_key, count, dimensions={
+                'key': key
+            })
+    else:
+        to_cloudwatch('social-shares', key, count)
+

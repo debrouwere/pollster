@@ -1,0 +1,42 @@
+#!/usr/bin/env python3
+
+import os
+import re
+import sh
+
+# can run locally or inside of a Docker container that's 
+# part of a Fleet cluster
+if 'FLEETCTL_TUNNEL_IPV4' in os.environ:
+    fleet = sh.fleetctl.bake(
+        tunnel=os.environ['FLEETCTL_TUNNEL_IPV4'])
+else:
+    endpoint = "http://{localhost}:4001/".format(
+        localhost=os.environ['COREOS_PRIVATE_IPV4'])
+    fleet = sh.fleetctl.bake(endpoint=endpoint)
+
+
+def clean(string):
+    return re.sub(r'\t+', '\t', string).strip()
+
+def read(string, delimiter='\t', eol='\n'):
+    lines = string.split(eol)
+    return [line.split(delimiter) for line in lines]
+
+
+units_raw = fleet('list-units', fields='unit,sub', no_legend=True)
+units = read(clean(str(units_raw)))
+machines_raw = fleet('list-machines', fields='ip', no_legend=True)
+machines = read(clean(str(machines_raw)))
+
+# now we can put this in cloudwatch!
+for unit, status in units:
+    if '@' in unit:
+        container, instance = unit.split('@')
+        n, service_type = instance.split('.')
+    else:
+        container, service_type = unit.split('.')
+        n = 1
+    print(container, n, service_type, status)
+
+for ip in machines:
+    print(ip)
