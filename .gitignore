@@ -77,3 +77,6 @@ target/
 # environment secrets
 *.env
 !example.env
+
+# sandbox
+sandbox
