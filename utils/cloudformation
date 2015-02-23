@@ -1,0 +1,12 @@
+#!/usr/bin/env python
+
+import sys
+import json
+import yaml
+
+
+template = open('stack/cloudformation/{name}.yml'.format(name=sys.argv[1])).read()
+cloud_config = open('stack/cloudformation/cloud-config.yml').read()
+cloudformation_raw = template.format(cloud_config=cloud_config)
+cloudformation = yaml.load(cloudformation_raw)
+print(json.dumps(cloudformation, indent=2))
