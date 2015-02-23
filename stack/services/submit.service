@@ -16,9 +16,11 @@ ExecStart=/usr/bin/docker run \
     --env-file /tmp/etc/pollster \
     debrouwere/pollster /pollster/submit
 ExecStop=/usr/bin/docker stop submit
-ExecStopPost=aws cloudwatch put-metric-data \
+ExecStopPost=/usr/bin/docker run \
+    --env-file /etc/environment \
+    --rm debrouwere/pollster aws cloudwatch put-metric-data \
     --namespace social-shares \
-    --metric-name stop \
+    --metric-name exec:stop \
     --dimensions type=timer,container=submit \
     --value 1 \
     --unit Count

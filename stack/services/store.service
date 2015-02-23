@@ -13,15 +13,19 @@ ExecStart=/usr/bin/docker run --name store -p 6379:6379 --rm redis
 ExecStartPost=/usr/bin/etcdctl set /pollster/JOBS_REDIS_HOST ${COREOS_PRIVATE_IPV4}
 ExecStop=/usr/bin/docker stop store
 ExecStopPost=/usr/bin/etcdctl rm /pollster/JOBS_REDIS_HOST
-ExecStartPost=aws cloudwatch put-metric-data \
+ExecStartPost=/usr/bin/docker run \
+    --env-file /etc/environment \
+    --rm debrouwere/pollster aws cloudwatch put-metric-data \
     --namespace social-shares \
-    --metric-name start \
+    --metric-name exec:start \
     --dimensions type=scheduler,container=store \
     --value 1 \
     --unit Count
-ExecStopPost=aws cloudwatch put-metric-data \
+ExecStopPost=/usr/bin/docker run \
+    --env-file /etc/environment \
+    --rm debrouwere/pollster aws cloudwatch put-metric-data \
     --namespace social-shares \
-    --metric-name stop \
+    --metric-name exec:stop \
     --dimensions type=scheduler,container=store \
     --value 1 \
     --unit Count

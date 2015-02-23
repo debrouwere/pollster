@@ -19,15 +19,19 @@ ExecStart=/usr/bin/docker run \
     --env-file /tmp/etc/pollster \
     debrouwere/pollster /pollster/poll careful
 ExecStop=/usr/bin/docker stop poller.careful
-ExecStartPost=aws cloudwatch put-metric-data \
+ExecStartPost=/usr/bin/docker run \
+    --env-file /etc/environment \
+    --rm debrouwere/pollster aws cloudwatch put-metric-data \
     --namespace social-shares \
-    --metric-name start \
+    --metric-name exec:start \
     --dimensions type=poller,container=poller.careful.%i \
     --value 1 \
     --unit Count
-ExecStopPost=aws cloudwatch put-metric-data \
+ExecStopPost=/usr/bin/docker run \
+    --env-file /etc/environment \
+    --rm debrouwere/pollster aws cloudwatch put-metric-data \
     --namespace social-shares \
-    --metric-name stop \
+    --metric-name exec:stop \
     --dimensions type=poller,container=poller.careful.%i \
     --value 1 \
     --unit Count
