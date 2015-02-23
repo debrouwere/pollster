@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import sys
 import os
@@ -72,7 +72,7 @@ def to_dynamodb(data, config):
 
 def to_console(url, keys):
     platforms = ', '.join(keys)
-    print 'Fetched {} counts for {}'.format(platforms, url)
+    print('Fetched {} counts for {}'.format(platforms, url))
 
 def to_cloudwatch(keys, container, config):
     connection = cloudwatch.connect_to_region(
@@ -117,5 +117,5 @@ if __name__ == '__main__':
     schedule = sys.argv[1]
     platforms = schedules[schedule]
     fetcher = functools.partial(fetch, platforms)
-    print 'Start responding to {} jobs'.format(schedule)
+    print('Start responding to {} jobs'.format(schedule))
     board.respond('pollster/' + schedule, fetcher)

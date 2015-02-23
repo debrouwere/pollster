@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import os
 import json
@@ -37,9 +37,9 @@ def backup(config):
 
 
 if __name__ == '__main__':
-    # TODO: put on cloudwatch as well
+    # TODO: put backup # jobs on cloudwatch
     count = backup(os.environ)
     if count:
-        print 'Backed up {} jobs to Amazon S3.'.format(count)
+        print('Backed up {} jobs to Amazon S3.'.format(count))
     else:
-        print 'Skipped backup. The scheduler responded but did not have any jobs.'
+        print('Skipped backup. The scheduler responded but did not have any jobs.')

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import os
 import random
@@ -51,8 +51,9 @@ def submit(feed, path, update=False):
     return updates
 
 if __name__ == '__main__':
+    # TODO: add these counts to CloudWatch (`submit` metric)
     created = submit(os.environ['ARTICLE_FEED_NX'], os.environ['ARTICLE_FEED_PATH_TO_URL'])
     updated = submit(os.environ['ARTICLE_FEED'], os.environ['ARTICLE_FEED_PATH_TO_URL'], update=True)
 
-    print "Added {} new article polling jobs.".format(created)
-    print "Updated {} existing article polling jobs.".format(updated)
+    print("Added {} new article polling jobs.".format(created))
+    print("Updated {} existing article polling jobs.".format(updated))
