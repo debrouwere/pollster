@@ -1,0 +1,69 @@
+#!/usr/bin/env python3
+
+"""
+This utility is the first thing that runs on every machine that's part
+of the cluster. It ensures that all
+"""
+
+import os
+import re
+from collections import Counter
+import sh
+
+# TODO: add our IP to ETC, /pollster/puppeteer
+# etcdctl set /foo/bar "Goodbye world" --swap-with-index
+# (seems like it's safer to do it from Python? Though
+# there's always options in StartPre if needed. And
+# definitely have to look into the swap / mk / update
+# options)
+# https://github.com/coreos/etcd/tree/master/etcdctl
+
+self = os.environ['COREOS_PRIVATE_IPV4']
+master = utils.etc.get('/pollster/puppeteer')
+active = puppeteer in machines
+
+# we elect ourselves as master, but then go to sleep
+# for another minute to see if we've been able to 
+# keep that status, before proceeding
+if not active:
+    utils.etc.set('/pollster/puppeteer', self)
+    return
+
+# we're not master, so we can stop here
+if not master == self:
+    return
+
+# TODO: verify if we have been chosen to be 
+
+
+# extract sh and read/clean from `heartbeat` 
+# and put it in a utils file
+from .utils import fleet
+
+machines = fleet.list_machines()
+every = len(machines)
+one = 1
+
+desired = {
+    'poller.careful': len(machines), 
+    'poller.frequent': len(machines), 
+    'backup': 1, 
+    'count': 1, 
+    'heartbeat': 1, 
+    'scheduler': 1, 
+    'store': 1, 
+    'submit': 1, 
+    'summarize': 1, 
+}
+
+actual = Counter()
+
+for unit in fleet.list_units():
+    actual.update({unit.container: 1})
+
+shortages = desired.copy()
+shortages.subtract(actual)
+
+for container, additional in shortages.items():
+    if additional > 0:
+        fleet.start(container + '@' + utils.timestamp())
