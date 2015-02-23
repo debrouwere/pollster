@@ -1,0 +1,148 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Jobs stack
+
+# Mappings
+
+Mappings:
+  RegionMap:
+    ap-northeast-1:
+      ami: ami-838eb882
+    sa-east-1:
+      ami: ami-75922668
+    ap-southeast-2:
+      ami: ami-1dabc627
+    ap-southeast-1:
+      ami: ami-7878592a
+    us-east-1:
+      ami: ami-d878c3b0
+    us-west-2:
+      ami: ami-f52c63c5
+    us-west-1:
+      ami: ami-856772c0
+    eu-west-1:
+      ami: ami-58e14e2f
+
+# Parameters
+
+Parameters:
+  ClusterSize:
+    Description: Number of nodes in your cluster
+    Type: Number
+    Default: 3
+    MinValue: 3
+    MaxValue: 10
+
+  DiscoveryURL:
+    Description: An unique etcd cluster discovery URL. Grab a new token from https://discovery.etcd.io/new
+    Type: String
+
+  KeyPair:
+    Description: The name of an existing EC2 Key Pair to allow SSH access to the instance.
+    Type: String
+
+# Resources
+
+Resources:
+  CoreOSAccessKey:
+    Type: AWS::IAM::AccessKey
+    Properties:
+      UserName:
+        Ref: CoreOSUser
+
+  CoreOSUser:
+    Type: AWS::IAM::User
+
+  CoreOSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Jobs
+      SecurityGroupIngress:
+        # ssh
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        # http
+        - FromPort: 80
+          ToPort: 80
+          IpProtocol: tcp
+          CidrIp: 0.0.0.0/0
+
+  EtcdIngress4001:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupName: 
+        Ref: CoreOSSecurityGroup
+      IpProtocol: tcp
+      FromPort: 4001
+      ToPort: 4001
+      SourceSecurityGroupId:
+        'Fn::GetAtt':
+          - CoreOSSecurityGroup
+          - GroupId
+
+  EtcdIngress7001:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupName: 
+        Ref: CoreOSSecurityGroup
+      IpProtocol: tcp
+      FromPort: 7001
+      ToPort: 7001
+      SourceSecurityGroupId:
+        'Fn::GetAtt':
+          - CoreOSSecurityGroup
+          - GroupId
+
+  RedisIngress6379:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupName: 
+        Ref: CoreOSSecurityGroup
+      IpProtocol: tcp
+      FromPort: 6379
+      ToPort: 6379
+      SourceSecurityGroupId:
+        'Fn::GetAtt':
+          - CoreOSSecurityGroup
+          - GroupId
+
+  CoreOSServerAutoScale:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      AvailabilityZones:
+        "Fn::GetAZs":
+          Ref: "AWS::Region"
+      LaunchConfigurationName:
+        Ref: CoreOSServerLaunchConfig
+      MinSize: 1
+      MaxSize: 10
+      DesiredCapacity:
+        Ref: ClusterSize
+      Tags:
+        - Key: Name
+          Value:
+            Ref: "AWS::StackName"
+          PropagateAtLaunch: true
+
+  CoreOSServerLaunchConfig:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties:
+      ImageId:
+        "Fn::FindInMap":
+          - RegionMap
+          - Ref: AWS::Region
+          - ami
+      InstanceType: t2.micro
+      KeyName:
+        Ref: KeyPair
+      SecurityGroups:
+        - Ref: CoreOSSecurityGroup
+      UserData:
+        "Fn::Base64":
+          "Fn::Join":
+            - ""
+            -
+              - |-
+{cloud_config}
+              - Ref: DiscoveryURL
