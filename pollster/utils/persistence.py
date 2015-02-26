@@ -1,6 +1,6 @@
 import os
 
-from boto import dynamodb2, sqs
+from boto import dynamodb2, sqs, ec2
 from boto.sqs.message import Message, RawMessage
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key as S3Key
@@ -46,7 +46,7 @@ def connect_to_dynamodb(key_id, key, region=None, local=False):
         })
     else:
         config.update({
-            'region': region, 
+            'region': ec2.get_region(region), 
         })
 
     connection = DynamoDBConnection(**config)
