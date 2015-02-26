@@ -78,5 +78,6 @@ target/
 *.env
 !example.env
 
-# sandbox
+# sandbox and local development
+dynamodb
 sandbox
