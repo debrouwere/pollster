@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 
 import redisjobs as jobs
 
-from utils import request, split, traverse, get_json, persistence
+from utils import request, split, traverse, persistence
 
 
 def submit(feed, path, update=False):
