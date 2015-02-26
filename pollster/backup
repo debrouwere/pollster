@@ -8,28 +8,27 @@ import redisjobs as jobs
 from utils import persistence
 
 
-def backup(config):
+def backup():
     try:
-        board = jobs.Board(host=config['JOBS_REDIS_HOST'])
+        board = jobs.Board(host=os.environ['JOBS_REDIS_HOST'])
         serialization = board.dump()
     except:
         raise IOError('Could not get job listing from Jobs. Redis or the scheduler might be offline.')
 
-    count = len(serialization['jobs']):
+    count = len(serialization['jobs'])
 
     if not count:
         return 0
 
     dump = json.dumps(serialization)
-    path = os.path.join(location.path.lstrip('/'), 'jobs.json')
     mime = 'application/json'
-    persistence.to_file(dump, path, 'social-shares', mime)
+    persistence.to_file(dump, 'jobs.json', os.environ['POLLSTER_S3'], mime)
 
     return count
 
 
 if __name__ == '__main__':
-    count = backup(os.environ)
+    count = backup()
     if count:
         persistence.to_monitor('backup', n=1)
         print('Backed up {} jobs to Amazon S3.'.format(count))

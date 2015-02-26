@@ -23,6 +23,18 @@ restore:
     - .:/opt
   env_file: local.env
 
+backup:
+  image: debrouwere/pollster
+  command: /opt/pollster/backup
+  links:
+    - dynamodb
+    - redis
+    - scheduler
+    - restore
+  volumes:
+    - .:/opt
+  env_file: local.env
+
 careful:
   image: debrouwere/pollster
   command: /opt/pollster/poll careful
