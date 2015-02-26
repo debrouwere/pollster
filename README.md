@@ -10,7 +10,7 @@ Pollster relies on [Jobs](https://github.com/debrouwere/jobs) for scheduling and
 
 ### Local installation
 
-A [Fig](http://www.fig.sh/) configuration is coming.
+You can run Pollster locally using [Fig](http://www.fig.sh/), though when running locally some aspects (like saving to a production database) will be simulated.
 
 ### Installation on a cluster
 
@@ -35,12 +35,12 @@ cd stack/services
 # onto each command that follows
 repl fleetctl --tunnel <machine>
 submit *.service *.timer
-start store
+start redis
 start scheduler
 start poller.careful@{1..3}
 start poller.frequent@{1..3}
-load backup submitter summarize
-start backup.timer submitter.timer summarize.timer
+load backup submit summarize
+start backup.timer submit.timer summarize.timer
 ```
 
 Congratulations! You should now have a functional Pollster cluster. Verify with `fleetctl --tunnel <machine> --list-units`.
