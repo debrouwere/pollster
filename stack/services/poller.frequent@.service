@@ -13,14 +13,13 @@ ExecStartPre=/usr/bin/curl \
     https://raw.githubusercontent.com/debrouwere/pollster/master/src/etcsnapshot.sh
 ExecStartPre=/usr/bin/bash /home/core/etcsnapshot
 EnvironmentFile=/etc/environment
-EnvironmentFile=/tmp/etc/pollster
 ExecStart=/usr/bin/docker run \
     --name poller.frequent \
     --env-file /tmp/etc/pollster \
-    debrouwere/pollster /pollster/poll frequent
+    debrouwere/pollster /opt/pollster/poll frequent
 ExecStop=/usr/bin/docker stop poller.frequent
 ExecStartPost=/usr/bin/docker run \
-    --env-file /etc/environment \
+    --env-file /tmp/etc/pollster \
     --rm debrouwere/pollster aws cloudwatch put-metric-data \
     --namespace social-shares \
     --metric-name exec:start \
@@ -28,7 +27,7 @@ ExecStartPost=/usr/bin/docker run \
     --value 1 \
     --unit Count
 ExecStopPost=/usr/bin/docker run \
-    --env-file /etc/environment \
+    --env-file /tmp/etc/pollster \
     --rm debrouwere/pollster aws cloudwatch put-metric-data \
     --namespace social-shares \
     --metric-name exec:stop \
@@ -38,3 +37,4 @@ ExecStopPost=/usr/bin/docker run \
 
 [X-Fleet]
 X-Conflicts=poller.frequent@*.service
+X-Conflicts=scheduler.service

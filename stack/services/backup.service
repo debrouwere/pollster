@@ -11,14 +11,13 @@ ExecStartPre=/usr/bin/curl \
     https://raw.githubusercontent.com/debrouwere/pollster/master/src/etcsnapshot.sh
 ExecStartPre=/usr/bin/bash /home/core/etcsnapshot
 EnvironmentFile=/etc/environment
-EnvironmentFile=/tmp/etc/pollster
 ExecStart=/usr/bin/docker run \
     --name backup \
     --env-file /tmp/etc/pollster \
-    debrouwere/pollster /pollster/backup
+    debrouwere/pollster /opt/pollster/backup
 ExecStop=/usr/bin/docker stop backup
 ExecStopPost=/usr/bin/docker run \
-    --env-file /etc/environment \
+    --env-file /tmp/etc/pollster \
     --rm debrouwere/pollster aws cloudwatch put-metric-data \
     --namespace social-shares \
     --metric-name exec:stop \

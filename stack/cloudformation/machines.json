@@ -27,7 +27,7 @@
             "Fn::Join": [
               "", 
               [
-                "#cloud-config\n\ncoreos:\n  units:\n    - name: etcd.service\n      command: start\n    - name: fleet.service\n      command: start\n  etcd:\n    addr: $private_ipv4:4001\n    peer-addr: $private_ipv4:7001\n    discovery: ", 
+                "#cloud-config\n\ncoreos:\n  units:\n    - name: etcd.service\n      command: start\n    - name: fleet.service\n      command: start\n    #- name: master.service\n    #  command: start\n    #  content: \n  etcd:\n    addr: $private_ipv4:4001\n    peer-addr: $private_ipv4:7001\n    discovery: ", 
                 {
                   "Ref": "DiscoveryURL"
                 }

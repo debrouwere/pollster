@@ -6,26 +6,30 @@ Restart=always
 RestartSec=10
 TimeoutStartSec=600
 EnvironmentFile=/etc/environment
+ExecStartPre=/usr/bin/curl \
+    -o /home/core/etcsnapshot \
+    https://raw.githubusercontent.com/debrouwere/pollster/master/src/etcsnapshot.sh
+ExecStartPre=/usr/bin/bash /home/core/etcsnapshot
 ExecStartPre=-/usr/bin/docker kill redis
 ExecStartPre=-/usr/bin/docker rm redis
 ExecStartPre=/usr/bin/docker pull redis
-ExecStart=/usr/bin/docker run --name store -p 6379:6379 --rm redis
+ExecStart=/usr/bin/docker run --name redis -p 6379:6379 --rm redis
 ExecStartPost=/usr/bin/etcdctl set /pollster/JOBS_REDIS_HOST ${COREOS_PRIVATE_IPV4}
-ExecStop=/usr/bin/docker stop store
+ExecStop=/usr/bin/docker stop redis
 ExecStopPost=/usr/bin/etcdctl rm /pollster/JOBS_REDIS_HOST
 ExecStartPost=/usr/bin/docker run \
-    --env-file /etc/environment \
+    --env-file /tmp/etc/pollster \
     --rm debrouwere/pollster aws cloudwatch put-metric-data \
     --namespace social-shares \
     --metric-name exec:start \
-    --dimensions type=scheduler,container=store \
+    --dimensions type=scheduler,container=redis \
     --value 1 \
     --unit Count
 ExecStopPost=/usr/bin/docker run \
-    --env-file /etc/environment \
+    --env-file /tmp/etc/pollster \
     --rm debrouwere/pollster aws cloudwatch put-metric-data \
     --namespace social-shares \
     --metric-name exec:stop \
-    --dimensions type=scheduler,container=store \
+    --dimensions type=scheduler,container=redis \
     --value 1 \
     --unit Count
