@@ -12,6 +12,17 @@ scheduler:
   links:
     - redis
 
+restore:
+  image: debrouwere/pollster
+  command: /opt/pollster/restore
+  links:
+    - dynamodb
+    - redis
+    - scheduler
+  volumes:
+    - .:/opt
+  env_file: local.env
+
 careful:
   image: debrouwere/pollster
   command: /opt/pollster/poll careful
