@@ -1,0 +1,47 @@
+#!/usr/bin/env python3
+
+import os
+import random
+from datetime import datetime, timedelta
+
+import redisjobs as jobs
+
+from utils import request, split, traverse, get_json, persistence
+
+
+def submit(feed, path, update=False):
+    feed = request(feed, json=True)
+    urls = traverse(feed, path)
+    board = jobs.Board(host=os.environ['JOBS_REDIS_HOST'])
+    updates = 0
+    for url in urls:
+        for schedule in ['frequent', 'careful']:
+            runner = 'pollster/' + schedule
+            job_id = runner + ':' + url
+            interval = int(os.environ['POLLER_' + schedule.upper() + '_INTERVAL'])
+            now = datetime.today()
+            jitter = timedelta(seconds=random.randint(0, 60))
+            start = now + jitter
+            updated = board.put(
+                id=job_id, 
+                runner=runner, 
+                payload=url, 
+                seconds=interval, 
+                start=start.timestamp(), 
+                duration=int(os.environ['POLLER_DURATION']), 
+                decay=float(os.environ['POLLER_DECAY']), 
+                update=update, 
+                )
+            updates += updated
+
+    return updates
+
+
+if __name__ == '__main__':
+    feeds = split(os.environ['ARTICLE_FEEDS'], delimiter='@', eol=',')
+    for path, feed in feeds:
+        created = submit(feed, path)
+        persistence.to_console("Added {n} new article polling jobs.", n=created)
+        persistence.to_monitor('submit', n=created, dimensions={
+            'feed': feed, 
+            })

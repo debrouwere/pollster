@@ -1,0 +1,35 @@
+#!/usr/bin/env python3
+
+import os
+import json
+from boto.s3.connection import S3Connection
+from boto.s3.key import Key
+
+import redisjobs as jobs
+
+from utils import persistence
+
+
+def restore():
+    raw_state = persistence.from_file('jobs.json')
+    if raw_state:
+        state = json.loads(raw_state)
+    else:
+        print("No Jobs backup found on Amazon S3.")
+        return []
+
+    if 'jobs' in state and len(state['jobs']):
+        board = jobs.Board(host=os.environ['JOBS_REDIS_HOST'])
+        board.load(state)
+        return state['jobs'].keys()
+    else:
+        return []
+
+
+if __name__ == '__main__':
+    count = len(restore())
+    persistence.to_monitor('restore', n=count)
+    if count:
+        persistence.to_console('Restored {n} jobs from Amazon S3.', n=count)
+    else:
+        persistence.to_console('Could not restore job schedule. Redis or the scheduler might be offline.')

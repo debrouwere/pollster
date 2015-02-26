@@ -1,0 +1,15 @@
+#!/usr/bin/env python3
+
+from utils import fleet, persistence
+
+
+def checkup():
+    for unit in fleet.list_units():
+        persistence.to_monitor('heartbeat:units', dimensions=unit)
+
+    for ip in fleet.list_machines():
+        persistence.to_monitor('heartbeat:machines', dimensions=ip)
+
+
+if __name__ == '__main__':
+    checkup()

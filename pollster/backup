@@ -2,10 +2,10 @@
 
 import os
 import json
-from urlparse import urlparse
-from boto.s3.connection import S3Connection
-from boto.s3.key import Key
+
 import redisjobs as jobs
+
+from utils import persistence
 
 
 def backup(config):
@@ -21,25 +21,17 @@ def backup(config):
         return 0
 
     dump = json.dumps(serialization)
-
-    s3 = S3Connection(
-        config['AWS_ACCESS_KEY_ID'], 
-        config['AWS_SECRET_ACCESS_KEY'], 
-        )
-    location = urlparse(config['POLLSTER_S3'])
-    bucket = s3.get_bucket(location.hostname, validate=False)  
-    output = Key(bucket)
-    output.key = os.path.join(location.path.lstrip('/'), 'jobs.json')
-    output.content_type = 'application/json'
-    output.set_contents_from_string(dump)
+    path = os.path.join(location.path.lstrip('/'), 'jobs.json')
+    mime = 'application/json'
+    persistence.to_file(dump, path, 'social-shares', mime)
 
     return count
 
 
 if __name__ == '__main__':
-    # TODO: put backup # jobs on cloudwatch
     count = backup(os.environ)
     if count:
+        persistence.to_monitor('backup', n=1)
         print('Backed up {} jobs to Amazon S3.'.format(count))
     else:
         print('Skipped backup. The scheduler responded but did not have any jobs.')

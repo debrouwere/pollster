@@ -7,13 +7,8 @@ from urlparse import urlparse
 import csvkit
 from cStringIO import StringIO
 from datetime import date, datetime, timedelta
-from boto import dynamodb2
-from boto.dynamodb2.table import Table
-from boto.s3.connection import S3Connection
-from boto.s3.key import Key
 
-
-sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
+from utils import persistence
 
 
 fields = [
@@ -32,18 +27,10 @@ fields = [
     ]
 
 
-def timestamp(date):
-    return int(time.mktime(date.timetuple()))
-
 def get_counts(start, stop):
-    dynamo = dynamodb2.connect_to_region(
-        os.environ['AWS_REGION'], 
-        aws_access_key_id=os.environ['AWS_ACCESS_KEY_ID'], 
-        aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'], 
-        )
-    table = Table('social-shares', connection=dynamo)
+    table = persistence.Table('social-shares', connection=persistence.dynamodb)
     return table.scan(
-        timestamp__between=[timestamp(start), timestamp(stop) - 1], 
+        timestamp__between=[start.timestamp(), stop.timestamp() - 1], 
         )
 
 def serialize_items(items):
@@ -56,18 +43,6 @@ def serialize_items(items):
 
     return buff.getvalue()
 
-def to_s3(name, contents):
-    s3 = S3Connection(
-        os.environ['AWS_ACCESS_KEY_ID'], 
-        os.environ['AWS_SECRET_ACCESS_KEY'], 
-        )
-    location = urlparse(os.environ['POLLSTER_S3'])
-    bucket = s3.get_bucket(location.hostname, validate=False)  
-    output = Key(bucket)
-    output.key = os.path.join(location.path.lstrip('/'), name)
-    output.content_type = 'text/csv'
-    output.set_contents_from_string(contents)
-
 def summarize_day(start):
     timer = datetime.now()
 
@@ -75,7 +50,7 @@ def summarize_day(start):
     stop = start + timedelta(days=1)
     counts = list(get_counts(start, stop))
     serialized_counts = serialize_items(counts)
-    to_s3(name, serialized_counts)
+    persistence.to_file(serialized_counts, name, 'social-shares', 'text/csv')
 
     duration = (datetime.now() - timer).total_seconds()
     return (name, (len(counts), duration))
