@@ -1,0 +1,45 @@
+dynamodb:
+  image: deangiberson/aws-dynamodb-local
+  volumes:
+    - ./dynamodb:/var/dynamodb_local
+
+redis:
+  image: redis
+
+scheduler:
+  image: debrouwere/jobs
+  command: job tick --host redis
+  links:
+    - redis
+
+careful:
+  image: debrouwere/pollster
+  command: /opt/pollster/poll careful
+  links:
+    - dynamodb
+    - redis
+    - scheduler
+  volumes:
+    - .:/opt
+  env_file: local.env
+
+frequent:
+  image: debrouwere/pollster
+  command: /opt/pollster/poll frequent
+  links:
+    - dynamodb
+    - redis
+    - scheduler
+  volumes:
+    - .:/opt
+  env_file: local.env
+
+submitter:
+  image: debrouwere/pollster
+  command: /opt/pollster/submit
+  links:
+    - redis
+    - scheduler
+  volumes:
+    - .:/opt
+  env_file: local.env
