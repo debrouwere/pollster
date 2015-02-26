@@ -11,7 +11,7 @@ from utils import persistence
 
 
 def restore():
-    raw_state = persistence.from_file('jobs.json')
+    raw_state = persistence.from_file('jobs.json', os.getenv('POLLSTER_S3'))
     if raw_state:
         state = json.loads(raw_state)
     else:
