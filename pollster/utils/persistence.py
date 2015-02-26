@@ -60,7 +60,7 @@ def connect_to_dynamodb(key_id, key, region=None, local=False):
 dynamodb = connect_to_dynamodb(
     key_id=os.getenv('AWS_ACCESS_KEY_ID'), 
     key=os.getenv('AWS_SECRET_ACCESS_KEY'), 
-    region=os.getenv('AWS_REGION'), 
+    region=environment.region, 
     local=environment.local,
     )
 
@@ -97,7 +97,7 @@ def from_file(path, bucket_name):
     output = S3Key(bucket)
     output.key = path
     try:
-        return output.get_contents_as_string()
+        return output.get_contents_as_string().decode('utf-8')
     except Exception:
         return None
 
