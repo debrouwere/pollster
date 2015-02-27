@@ -15,7 +15,6 @@ from utils import flatten, persistence, environment
 
 
 def fetch(platforms, meta):
-    persistence.to_console('polling')
     url = meta['payload']
     counts = socialshares.fetch(url, platforms, attempts=1)
     platforms = counts.keys()

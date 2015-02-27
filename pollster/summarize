@@ -4,7 +4,7 @@ import sys
 import os
 import time
 import csvkit
-from cStringIO import StringIO
+from io import StringIO
 from datetime import date, datetime, timedelta
 
 from utils import persistence
