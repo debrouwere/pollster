@@ -4,6 +4,8 @@
 Count jobs, scheduled jobs, runners and queue sizes.
 """
 
+import os
+
 import redisjobs as jobs
 
 from utils import persistence
