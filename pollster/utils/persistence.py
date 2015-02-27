@@ -1,4 +1,5 @@
 import os
+import json
 
 from boto import dynamodb2, sqs, ec2
 from boto.sqs.message import Message, RawMessage
