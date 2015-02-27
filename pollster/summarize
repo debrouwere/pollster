@@ -3,7 +3,6 @@
 import sys
 import os
 import time
-from urlparse import urlparse
 import csvkit
 from cStringIO import StringIO
 from datetime import date, datetime, timedelta
@@ -56,9 +55,9 @@ def summarize_day(start):
     return (name, (len(counts), duration))
 
 def summarize(start=None, stop=None):
-    if isinstance(start, basestring):
+    if isinstance(start, str):
         start = datetime.strptime(start, '%Y-%m-%d').date()
-    if isinstance(stop, basestring):
+    if isinstance(stop, str):
         stop = datetime.strptime(stop, '%Y-%m-%d').date()
 
     stop = stop or date.today()
@@ -74,11 +73,13 @@ def argv(i):
         return None
 
 if __name__ == '__main__':
-    # TODO: put these counts on CloudWatch (`backup` metric)
     counts = summarize(argv(1), argv(2))
     for filename, meta in counts.items():
-        print("Saved share counts to S3: {filename} ({counts} rows in {s} seconds)".format(
+        count, duration = meta
+        persistence.to_monitor('summarize', n=count)
+        persistence.to_monitor('summarize', unit='Seconds', n=duration)
+        persistence.to_console("Saved share counts to S3: {filename} ({counts} rows in {s} seconds)", 
             filename=filename, 
-            counts=meta[0], 
-            s=int(round(meta[1])),
-            ))
+            counts=count, 
+            s=int(round(duration)),
+            )

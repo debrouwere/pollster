@@ -135,9 +135,9 @@ def to_console(string, **local):
     print(string.format(**local))
 
 
-def to_monitor(event, dimensions={}, n=1):
+def to_monitor(event, dimensions={}, n=1, unit='Count'):
     if environment.local:
         print('[monitor] {}'.format(event))
     else:
         cloudwatch.put_metric_data('social-shares', event, 
-            value=n, unit='Count', dimensions=dimensions)
+            value=n, unit=unit, dimensions=dimensions)
