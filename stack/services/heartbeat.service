@@ -6,6 +6,10 @@ TimeoutStartSec=600
 ExecStartPre=-/usr/bin/docker kill heartbeat
 ExecStartPre=-/usr/bin/docker rm heartbeat
 ExecStartPre=/usr/bin/docker pull debrouwere/pollster
+ExecStartPre=/usr/bin/curl \
+    -o /home/core/etcsnapshot \
+    https://raw.githubusercontent.com/debrouwere/pollster/master/pollster/etcsnapshot.sh
+ExecStartPre=/usr/bin/bash /home/core/etcsnapshot
 EnvironmentFile=/etc/environment
 ExecStartPre=/usr/bin/curl \
     -o /home/core/etcsnapshot \
