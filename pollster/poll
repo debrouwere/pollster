@@ -22,12 +22,12 @@ def fetch(platforms, meta):
     item = copy(counts)
     item['url'] = url
     item['timestamp'] = int(time.time())
-    persistence.to_queue(flatten(item), os.environ['POLLSTER_SQS'])
-    persistence.to_db(flatten(item), os.environ['POLLSTER_DYNAMODB'])
     persistence.to_console('Fetched {platforms} counts for {url}', 
         platforms=', '.join(platforms), url=url)
+    persistence.to_queue(flatten(item), os.environ['POLLSTER_SQS'])
+    persistence.to_db(flatten(item), os.environ['POLLSTER_DYNAMODB'])
     for platform in platforms:
-        persistence.to_monitor('polls', platforms, { 
+        persistence.to_monitor('poll', { 
             'InstanceId': environment.get_instance_id(),
             'platform': platform, 
             })

@@ -47,7 +47,7 @@ def connect_to_dynamodb(key_id, key, region=None, local=False):
         })
     else:
         config.update({
-            'region': ec2.get_region(region), 
+            'region': environment.get_dynamodb_region(region)
         })
 
     connection = DynamoDBConnection(**config)
@@ -130,7 +130,6 @@ def to_db(obj, table_name):
         existing = table.get_item(**get_keys(obj))
         existing._data.update(obj)
         existing.save()
-
 
 def to_console(string, **local):
     print(string.format(**local))
