@@ -60,7 +60,8 @@ def summarize(start=None, stop=None):
     if isinstance(stop, str):
         stop = datetime.strptime(stop, '%Y-%m-%d')
 
-    stop = stop or date.today()
+    today = datetime.combine(date.today(), datetime.min.time())
+    stop = stop or today
     start = start or stop - timedelta(days=1)
     duration = stop - start
     days = [start + timedelta(days=i) for i in range(duration.days)]
