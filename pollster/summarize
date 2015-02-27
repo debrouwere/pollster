@@ -45,7 +45,7 @@ def serialize_items(items):
 def summarize_day(start):
     timer = datetime.now()
 
-    name = start.isoformat() + '.csv'
+    name = start.date().isoformat() + '.csv'
     stop = start + timedelta(days=1)
     counts = list(get_counts(start, stop))
     serialized_counts = serialize_items(counts)
@@ -56,9 +56,9 @@ def summarize_day(start):
 
 def summarize(start=None, stop=None):
     if isinstance(start, str):
-        start = datetime.strptime(start, '%Y-%m-%d').date()
+        start = datetime.strptime(start, '%Y-%m-%d')
     if isinstance(stop, str):
-        stop = datetime.strptime(stop, '%Y-%m-%d').date()
+        stop = datetime.strptime(stop, '%Y-%m-%d')
 
     stop = stop or date.today()
     start = start or stop - timedelta(days=1)
