@@ -29,7 +29,7 @@ fields = [
 def get_counts(start, stop):
     table = persistence.Table('social-shares', connection=persistence.dynamodb)
     return table.scan(
-        timestamp__between=[start.timestamp(), stop.timestamp() - 1], 
+        timestamp__between=[int(start.timestamp()), int(stop.timestamp()) - 1], 
         )
 
 def serialize_items(items):
