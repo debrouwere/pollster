@@ -1,4 +1,4 @@
-import json
+from json import loads
 from urllib.parse import urlparse
 
 import requests
@@ -49,15 +49,15 @@ def traverse(obj, segments):
 
 def request(uri, json=False):
     segments = urlparse(uri)
-    if scheme in ('http', 'https'):
+    if segments.scheme in ('http', 'https'):
         text = requests.get(uri).text
-    elif scheme == 's3':
+    elif segments.scheme == 's3':
         path = segments.path.lstrip('/')
         text = persistence.from_file(path, segments.hostname)
     else:
         raise ValueError()
 
     if json:
-        text = json.loads(text)
+        text = loads(text)
 
     return text

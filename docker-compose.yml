@@ -57,10 +57,11 @@ frequent:
     - .:/opt
   env_file: local.env
 
-submitter:
+submit:
   image: debrouwere/pollster
   command: /opt/pollster/submit
   links:
+    - dynamodb
     - redis
     - scheduler
   volumes:
