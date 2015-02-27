@@ -1,0 +1,29 @@
+[Unit]
+Description=fleet statistics
+
+[Service]
+TimeoutStartSec=600
+ExecStartPre=-/usr/bin/docker kill heartbeat
+ExecStartPre=-/usr/bin/docker rm heartbeat
+ExecStartPre=/usr/bin/docker pull debrouwere/pollster
+EnvironmentFile=/etc/environment
+ExecStartPre=/usr/bin/curl \
+    -o /home/core/etcsnapshot \
+    https://raw.githubusercontent.com/debrouwere/pollster/master/pollster/etcsnapshot.sh
+ExecStartPre=/usr/bin/bash /home/core/etcsnapshot
+ExecStart=/usr/bin/docker run \
+    --name heartbeat \
+    --env-file /tmp/etc/pollster \
+    debrouwere/pollster /opt/pollster/heartbeat
+ExecStop=/usr/bin/docker stop heartbeat
+ExecStopPost=/usr/bin/docker run \
+    --env-file /tmp/etc/pollster \
+    --rm debrouwere/pollster aws cloudwatch put-metric-data \
+    --namespace social-shares \
+    --metric-name exec:stop \
+    --dimensions type=health,container=heartbeat \
+    --value 1 \
+    --unit heartbeat
+
+[X-Fleet]
+MachineOf=scheduler.service
