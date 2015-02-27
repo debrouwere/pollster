@@ -5,10 +5,10 @@ from utils import fleet, persistence
 
 def checkup():
     for unit in fleet.list_units():
-        persistence.to_monitor('heartbeat:units', dimensions=unit)
+        persistence.to_monitor('heartbeat:units', dimensions={'unit': unit})
 
     for ip in fleet.list_machines():
-        persistence.to_monitor('heartbeat:machines', dimensions=ip)
+        persistence.to_monitor('heartbeat:machines', dimensions={'ip': ip})
 
 
 if __name__ == '__main__':
