@@ -6,7 +6,7 @@ from utils import fleet, persistence
 def checkup():
     for unit, state in fleet.list_units():
         alive = state != 'failed'
-        persistence.to_monitor('heartbeat:units', n=int(alive), dimensions={'unit': unit})
+        persistence.to_monitor('heartbeat:units', n=int(alive), dimensions=unit)
 
     for ip in fleet.list_machines():
         persistence.to_monitor('heartbeat:machines', dimensions={'ip': ip})

@@ -17,6 +17,7 @@ ExecStartPre=/usr/bin/curl \
 ExecStartPre=/usr/bin/bash /home/core/etcsnapshot
 ExecStart=/usr/bin/docker run \
     --name heartbeat \
+    --env-file /etc/environment \
     --env-file /tmp/etc/pollster \
     debrouwere/pollster /opt/pollster/heartbeat
 ExecStop=/usr/bin/docker stop heartbeat
