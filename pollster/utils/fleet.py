@@ -50,10 +50,10 @@ def set_etc(key, value):
 def list_units():
     fleet = connect()
     raw = fleet('list-units', fields='unit,sub', no_legend=True)
-    units = read(clean(str(units_raw)))
+    units = read(clean(str(raw)))
     return map(parse_unit, units)
 
 def list_machines():
     fleet = connect()
     raw = fleet('list-machines', fields='ip', no_legend=True)
-    return read(clean(str(machines_raw)))
+    return read(clean(str(raw)))

@@ -27,7 +27,7 @@ ExecStopPost=/usr/bin/docker run \
     --metric-name exec:stop \
     --dimensions type=health,container=heartbeat \
     --value 1 \
-    --unit heartbeat
+    --unit Count
 
 [X-Fleet]
 MachineOf=scheduler.service

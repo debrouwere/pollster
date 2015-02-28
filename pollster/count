@@ -11,10 +11,6 @@ import redisjobs as jobs
 from utils import persistence
 
 
-board = jobs.Board(host=os.environ['JOBS_REDIS_HOST'])
-counts = board.count()
-
-
 def save_counts(counts):
     for key, count in counts.items():
         if isinstance(count, dict):
@@ -27,4 +23,6 @@ def save_counts(counts):
 
 
 if __name__ == '__main__':
-    save_counts()
+    board = jobs.Board(host=os.environ['JOBS_REDIS_HOST'])
+    counts = board.count()
+    save_counts(counts)
