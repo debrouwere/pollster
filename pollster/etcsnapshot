@@ -1,7 +1,0 @@
-#!/usr/bin/env python3
- 
-
-import sh
-
-for namespace in sh.etcdctl.ls(_iter=True):
-    print namespace
