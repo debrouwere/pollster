@@ -32,7 +32,7 @@ def fetch(requested_platforms, meta):
             })
 
     blocked_platforms = len(set(requested_platforms).difference(platforms))
-    persistence.to_monitor('blocked', n=blocked_platforms, {
+    persistence.to_monitor('blocked', n=blocked_platforms, dimensions={
             'InstanceId': environment.get_instance_id(),        
         })
 
