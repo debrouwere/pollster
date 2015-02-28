@@ -1,9 +1,8 @@
 import os
 import json
 
-from boto import dynamodb2, sqs, ec2
+from boto import dynamodb2, sqs, ec2, s3
 from boto.sqs.message import Message, RawMessage
-from boto.s3.connection import S3Connection
 from boto.s3.key import Key as S3Key
 from boto.dynamodb2 import fields, types
 from boto.dynamodb2.layer1 import DynamoDBConnection
@@ -65,9 +64,10 @@ dynamodb = connect_to_dynamodb(
     local=environment.local,
     )
 
-s3 = S3Connection(
-    os.getenv('AWS_ACCESS_KEY_ID'), 
-    os.getenv('AWS_SECRET_ACCESS_KEY'), 
+s3 = s3.connect_to_region(
+    os.getenv('AWS_REGION'), 
+    aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'), 
+    aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'), 
     )
 
 sqs = sqs.connect_to_region(
