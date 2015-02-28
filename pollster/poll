@@ -14,9 +14,9 @@ import redisjobs as jobs
 from utils import flatten, persistence, environment
 
 
-def fetch(platforms, meta):
+def fetch(requested_platforms, meta):
     url = meta['payload']
-    counts = socialshares.fetch(url, platforms, attempts=1)
+    counts = socialshares.fetch(url, requested_platforms, attempts=1)
     platforms = counts.keys()
     item = copy(counts)
     item['url'] = url
@@ -30,6 +30,11 @@ def fetch(platforms, meta):
             'InstanceId': environment.get_instance_id(),
             'platform': platform, 
             })
+
+    blocked_platforms = len(set(requested_platforms).difference(platforms))
+    persistence.to_monitor('blocked', n=blocked_platforms, {
+            'InstanceId': environment.get_instance_id(),        
+        })
 
 schedules = {
     'frequent': ['facebook', 'twitter'], 

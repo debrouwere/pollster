@@ -24,7 +24,9 @@ def read(string, delimiter='\t', eol='\n'):
     lines = string.split(eol)
     return [line.split(delimiter) for line in lines]
 
-def parse_unit(unit):
+def parse_unit(info):
+    unit, sub = info
+
     if '@' in unit:
         container, instance = unit.split('@')
         i, service_type = instance.split('.')
@@ -32,11 +34,13 @@ def parse_unit(unit):
         container, service_type = unit.split('.')
         i = 1
 
-    return {
+    unit = {
         'container': container, 
         'type': service_type, 
         'instance': i, 
     }
+
+    return (unit, sub)
 
 def list_etc():
     return sh.etcdctl.ls()
