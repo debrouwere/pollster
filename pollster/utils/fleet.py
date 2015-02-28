@@ -32,7 +32,7 @@ def parse_unit(info):
         i, service_type = instance.split('.')
     else:
         container, service_type = unit.split('.')
-        i = 1
+        i = '1'
 
     unit = {
         'container': container, 
