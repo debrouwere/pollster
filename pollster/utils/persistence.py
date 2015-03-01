@@ -9,7 +9,7 @@ from boto.dynamodb2.layer1 import DynamoDBConnection
 from boto.dynamodb2.table import Table
 from boto.dynamodb2.exceptions import ConditionalCheckFailedException
 from boto.ec2 import cloudwatch
-
+from boto.ec2.cloudwatch.alarm import MetricAlarm
 
 from . import environment
 

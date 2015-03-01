@@ -14,6 +14,33 @@ import redisjobs as jobs
 from utils import flatten, persistence, environment
 
 
+def register(instance):
+    region = os.environ['AWS_REGION']
+    name = 'blocked-' + instance
+    actions = ['arn:aws:automate:eu-west-1:ec2:terminate']
+    if os.getenv('POLLSTER_SNS'):
+        actions.append(os.getenv('POLLSTER_SNS'))
+
+    alarm = persistence.MetricAlarm(
+        connection=None, 
+        name=name, 
+        metric='blocked', 
+        dimensions={
+            'InstanceId': instance, 
+        }, 
+        namespace='social-shares', 
+        statistic='Maximum', 
+        comparison='>=', 
+        threshold=1, 
+        period=60, 
+        evaluation_periods=30, 
+        description='Has this instance been rate limited or blocked by any third-party API?', 
+        alarm_actions=actions, 
+        )
+
+    persistence.cloudwatch.put_metric_alarm(alarm)
+
+
 def fetch(requested_platforms, meta):
     url = meta['payload']
     counts = socialshares.fetch(url, requested_platforms, attempts=1)
@@ -42,6 +69,7 @@ schedules = {
 }
 
 if __name__ == '__main__':
+    register(environment.get_instance_id())
     board = jobs.Board(host=os.environ['JOBS_REDIS_HOST'])
     schedule = sys.argv[1]
     platforms = schedules[schedule]
