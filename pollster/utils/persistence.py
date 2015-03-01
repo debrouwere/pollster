@@ -61,7 +61,7 @@ dynamodb = connect_to_dynamodb(
     key_id=os.getenv('AWS_ACCESS_KEY_ID'), 
     key=os.getenv('AWS_SECRET_ACCESS_KEY'), 
     region=environment.region, 
-    local=environment.local,
+    local=environment.local, 
     )
 
 s3 = s3.connect_to_region(

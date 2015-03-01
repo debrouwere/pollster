@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
- 
-rm -r /tmp/etc;
+
+if [ `expr $(date +%s) - $(stat -c %Y /tmp/etc)` -lt 60 ]
+then
+    exit
+fi
+
 mkdir -p /tmp/etc;
- 
+
 for namespace in `etcdctl ls`
 do
     destination="/tmp/etc$namespace"
