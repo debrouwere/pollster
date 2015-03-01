@@ -49,7 +49,8 @@ def summarize_day(start):
     stop = start + timedelta(days=1)
     counts = list(get_counts(start, stop))
     serialized_counts = serialize_items(counts)
-    persistence.to_file(serialized_counts, name, 'social-shares', 'text/csv')
+    print('to_file ' + str(len(counts)))
+    persistence.to_file(serialized_counts, name, os.environ['POLLSTER_S3'], 'text/csv')
 
     duration = (datetime.now() - timer).total_seconds()
     return (name, (len(counts), duration))
