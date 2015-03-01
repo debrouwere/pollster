@@ -5,12 +5,11 @@ then
     exit
 fi
 
-rm -r /tmp/etc;
-mkdir -p /tmp/etc;
+mkdir -p /tmp/etc.part;
 
 for namespace in `etcdctl ls`
 do
-    destination="/tmp/etc$namespace"
+    destination="/tmp/etc.part$namespace"
     for key in `etcdctl ls $namespace | cut -d / -f 3`
     do
         path="$namespace/$key"
@@ -18,3 +17,6 @@ do
         echo "$key=$value"
     done > "$destination"
 done
+
+rm -r /tmp/etc;
+mv /tmp/etc.part /tmp/etc;
