@@ -5,6 +5,7 @@ then
     exit
 fi
 
+rm -r /tmp/etc;
 mkdir -p /tmp/etc;
 
 for namespace in `etcdctl ls`
