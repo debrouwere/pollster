@@ -16,7 +16,7 @@ from utils import flatten, persistence, environment
 
 def register(instance):
     region = os.environ['AWS_REGION']
-    name = 'blocked-' + instance
+    name = 'pollster-blocked-' + instance
     actions = ['arn:aws:automate:eu-west-1:ec2:terminate']
     if os.getenv('POLLSTER_SNS'):
         actions.append(os.getenv('POLLSTER_SNS'))
