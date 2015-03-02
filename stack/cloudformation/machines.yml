@@ -5,22 +5,24 @@ Description: Jobs stack
 
 Mappings:
   RegionMap:
+    eu-central-1:
+      AMI: "ami-d44f7dc9"
     ap-northeast-1:
-      ami: ami-838eb882
+      AMI: "ami-7ffc1c7f"
     sa-east-1:
-      ami: ami-75922668
+      AMI: "ami-7b972966"
     ap-southeast-2:
-      ami: ami-1dabc627
+      AMI: "ami-0b027431"
     ap-southeast-1:
-      ami: ami-7878592a
+      AMI: "ami-54053106"
     us-east-1:
-      ami: ami-d878c3b0
+      AMI: "ami-eeefb886"
     us-west-2:
-      ami: ami-f52c63c5
+      AMI: "ami-a587a095"
     us-west-1:
-      ami: ami-856772c0
+      AMI: "ami-be958ffb"
     eu-west-1:
-      ami: ami-58e14e2f
+      AMI: "ami-e724b190"
 
 # Parameters
 
