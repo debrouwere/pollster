@@ -32,8 +32,8 @@ def register(instance):
         statistic='Average', 
         comparison='>=', 
         threshold=0.9, 
-        period=60, 
-        evaluation_periods=15, 
+        period=300, 
+        evaluation_periods=3, 
         description='Has this instance been rate limited or blocked by any third-party API?', 
         alarm_actions=actions, 
         )
