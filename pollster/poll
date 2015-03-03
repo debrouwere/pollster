@@ -31,7 +31,7 @@ def register(instance):
         namespace='social-shares', 
         statistic='Average', 
         comparison='>=', 
-        threshold=0.9, 
+        threshold=0.2, 
         period=300, 
         evaluation_periods=3, 
         description='Has this instance been rate limited or blocked by any third-party API?', 
