@@ -37,10 +37,10 @@ repl fleetctl --tunnel <machine>
 submit *.service *.timer
 start redis
 start scheduler
+load backup submit summarize heartbeat count
+start *.timer
 start poller.careful@{1..3}
 start poller.frequent@{1..3}
-load backup submit summarize
-start backup.timer submit.timer summarize.timer
 ```
 
 Congratulations! You should now have a functional Pollster cluster. Verify with `fleetctl --tunnel <machine> --list-units`.
