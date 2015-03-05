@@ -6,10 +6,9 @@
                       command: start
                     - name: fleet.service
                       command: start
-                    #- name: master.service
-                    #  command: start
-                    #  content: 
                   etcd:
                     addr: $private_ipv4:4001
                     peer-addr: $private_ipv4:7001
+                    cluster-active-size: 1
+                    cluster-remove-delay: 180.0
                     discovery: 

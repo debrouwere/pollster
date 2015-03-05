@@ -31,9 +31,8 @@ Parameters:
   ClusterSize:
     Description: Number of nodes in your cluster
     Type: Number
-    Default: 3
-    MinValue: 3
-    MaxValue: 10
+    Default: 1
+    MinValue: 1
 
   DiscoveryURL:
     Description: An unique etcd cluster discovery URL. Grab a new token from https://discovery.etcd.io/new
