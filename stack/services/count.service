@@ -28,6 +28,3 @@ ExecStopPost=/usr/bin/docker run \
     --dimensions type=health,container=count \
     --value 1 \
     --unit Count
-
-[X-Fleet]
-MachineOf=scheduler.service

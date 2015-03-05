@@ -29,6 +29,3 @@ ExecStopPost=/usr/bin/docker run \
     --dimensions type=health,container=heartbeat \
     --value 1 \
     --unit Count
-
-[X-Fleet]
-MachineOf=scheduler.service
