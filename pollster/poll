@@ -33,7 +33,7 @@ def register(instance):
         comparison='>=', 
         threshold=0.2, 
         period=300, 
-        evaluation_periods=os.getenv('POLLSTER_TERMINATION_DELAY', 3), 
+        evaluation_periods=int(os.getenv('POLLSTER_TERMINATION_DELAY', '3')), 
         description='Has this instance been rate limited or blocked by any third-party API?', 
         alarm_actions=actions, 
         )
