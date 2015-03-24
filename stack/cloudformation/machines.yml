@@ -2,28 +2,28 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: Jobs stack
 
 # Mappings
-# based on https://s3.amazonaws.com/coreos.com/dist/aws/coreos-beta-hvm.template
+# based on https://s3.amazonaws.com/coreos.com/dist/aws/coreos-stable-hvm.template
 
 Mappings:
   RegionMap:
     eu-central-1:
-      ami: ami-da4f7dc7
+      ami: ami-0e300d13
     ap-northeast-1:
-      ami: ami-7dfc1c7d
+      ami: ami-af28dcaf
     sa-east-1:
-      ami: ami-75972968
+      ami: ami-2354ec3e
     ap-southeast-2:
-      ami: ami-09027433
+      ami: ami-b9b5c583
     ap-southeast-1:
-      ami: ami-56053104
+      ami: ami-f80b3aaa
     us-east-1:
-      ami: ami-e0efb888
+      ami: ami-323b195a
     us-west-2:
-      ami: ami-a387a093
+      ami: ami-0789a437
     us-west-1:
-      ami: ami-b8958ffd
+      ami: ami-8dd533c9
     eu-west-1:
-      ami: ami-e524b192
+      ami: ami-55950a22
 
 # Parameters
 

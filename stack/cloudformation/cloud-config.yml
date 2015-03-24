@@ -1,6 +1,8 @@
                 #cloud-config
 
                 coreos:
+                  update:
+                    reboot-strategy: off
                   units:
                     - name: etcd.service
                       command: start
@@ -9,6 +11,6 @@
                   etcd:
                     addr: $private_ipv4:4001
                     peer-addr: $private_ipv4:7001
-                    cluster-active-size: 1
+                    cluster-active-size: 5
                     cluster-remove-delay: 180.0
                     discovery: 
