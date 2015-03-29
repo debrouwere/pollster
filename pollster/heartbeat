@@ -6,8 +6,8 @@ from dateutil.parser import parse as parse_date
 
 
 def is_stale(alarm):
-    last_update = parse_date(alarm.last_updated)
-    age = datetime.now() - alarm.replace(tzinfo=None)
+    last_update = parse_date(alarm.last_updated).replace(tzinfo=None)
+    age = datetime.now() - last_update
     return age > timedelta(hours=24)
 
 def is_alive(state):
