@@ -18,7 +18,7 @@ RUN \
     rm -r etcd-${ETC_VERSION}-linux-amd64
 RUN apt-get -y install golang
 RUN apt-get -y install python3 python3-pip
-RUN pip3 install sh boto awscli csvkit requests requests_futures
+RUN pip3 install sh boto awscli csvkit requests requests_futures python-dateutil
 RUN pip3 install socialshares>=1.0.0 redisjobs>=0.5.3
 
 COPY pollster /opt/pollster

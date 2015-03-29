@@ -1,7 +1,14 @@
 #!/usr/bin/env python3
 
 from utils import fleet, persistence
+from datetime import datetime, timedelta
+from dateutil.parser import parse as parse_date
 
+
+def is_stale(alarm):
+    last_update = parse_date(alarm.last_updated)
+    age = datetime.now() - alarm.replace(tzinfo=None)
+    return age > timedelta(hours=24)
 
 def is_alive(state):
     return state != 'failed'
@@ -17,5 +24,16 @@ def checkup():
         persistence.to_monitor('heartbeat:machines', dimensions={'ip': ip})
 
 
+def cleanup():
+    insufficient = persistence.cloudwatch.describe_alarms(
+        alarm_name_prefix='pollster-blocked', 
+        state_value='INSUFFICIENT', 
+        )
+    for alarm in insufficient:
+        if is_stale(alarm):
+            alarm.delete()
+
+
 if __name__ == '__main__':
     checkup()
+    cleanup()
