@@ -27,7 +27,7 @@ def checkup():
 def cleanup():
     insufficient = persistence.cloudwatch.describe_alarms(
         alarm_name_prefix='pollster-blocked', 
-        state_value='INSUFFICIENT', 
+        state_value='INSUFFICIENT_DATA', 
         )
     for alarm in insufficient:
         if is_stale(alarm):
