@@ -1,16 +1,26 @@
 {
-  "AWSTemplateFormatVersion": "2010-09-09",
   "Description": "Pollster data stack",
   "Resources": {
     "SQSQueue": {
+      "Type": "AWS::SQS::Queue",
       "Properties": {
         "QueueName": "social-shares"
-      },
-      "Type": "AWS::SQS::Queue"
+      }
     },
     "DynamoDBTable": {
+      "Type": "AWS::DynamoDB::Table",
       "Properties": {
         "TableName": "social-shares",
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "url",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "timestamp",
+            "AttributeType": "N"
+          }
+        ],
         "KeySchema": [
           {
             "AttributeName": "url",
@@ -24,19 +34,9 @@
         "ProvisionedThroughput": {
           "ReadCapacityUnits": 10,
           "WriteCapacityUnits": 10
-        },
-        "AttributeDefinitions": [
-          {
-            "AttributeName": "url",
-            "AttributeType": "S"
-          },
-          {
-            "AttributeName": "timestamp",
-            "AttributeType": "N"
-          }
-        ]
-      },
-      "Type": "AWS::DynamoDB::Table"
+        }
+      }
     }
-  }
+  },
+  "AWSTemplateFormatVersion": "2010-09-09"
 }
