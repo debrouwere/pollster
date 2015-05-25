@@ -35,7 +35,7 @@ Parameters:
     MinValue: 3
 
   DiscoveryURL:
-    Description: An unique etcd cluster discovery URL. Grab a new token from https://discovery.etcd.io/new
+    Description: An unique etcd cluster discovery URL. Grab a new token from https://discovery.etcd.io/new?size=n
     Type: String
 
   KeyPair:
@@ -70,27 +70,27 @@ Resources:
           IpProtocol: tcp
           CidrIp: 0.0.0.0/0
 
-  EtcdIngress4001:
+  EtcdIngress2379:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
       GroupName: 
         Ref: CoreOSSecurityGroup
       IpProtocol: tcp
-      FromPort: 4001
-      ToPort: 4001
+      FromPort: 2379
+      ToPort: 2379
       SourceSecurityGroupId:
         'Fn::GetAtt':
           - CoreOSSecurityGroup
           - GroupId
 
-  EtcdIngress7001:
+  EtcdIngress2380:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
       GroupName: 
         Ref: CoreOSSecurityGroup
       IpProtocol: tcp
-      FromPort: 7001
-      ToPort: 7001
+      FromPort: 2380
+      ToPort: 2380
       SourceSecurityGroupId:
         'Fn::GetAtt':
           - CoreOSSecurityGroup
@@ -117,7 +117,7 @@ Resources:
           Ref: "AWS::Region"
       LaunchConfigurationName:
         Ref: CoreOSServerLaunchConfig
-      MinSize: 1
+      MinSize: 3
       MaxSize: 10
       DesiredCapacity:
         Ref: ClusterSize

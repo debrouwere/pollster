@@ -8,9 +8,12 @@
                       command: start
                     - name: fleet.service
                       command: start
+                  fleet:
+                    peer-addr: $private_ipv4:2379
+                    public-ip: $private_ipv4
                   etcd:
-                    addr: $private_ipv4:4001
-                    peer-addr: $private_ipv4:7001
+                    addr: $private_ipv4:2379
+                    peer-addr: $private_ipv4:2380
                     cluster-active-size: 5
                     cluster-remove-delay: 180.0
                     discovery: 
