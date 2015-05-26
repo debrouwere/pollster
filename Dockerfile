@@ -1,8 +1,8 @@
 FROM debian:jessie
 MAINTAINER Stijn Debrouwere <stijn@debrouwere.org>
 
-ENV FLEET_VERSION v0.9.0
-ENV ETC_VERSION v0.4.6
+ENV FLEET_VERSION v0.10.1
+ENV ETC_VERSION v2.0.10
 
 RUN apt-get update
 RUN apt-get -y upgrade
