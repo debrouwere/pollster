@@ -2,14 +2,8 @@
 Description=schedule backup service
 
 [Service]
-TimeoutStartSec=600
 ExecStartPre=-/usr/bin/docker kill backup
 ExecStartPre=-/usr/bin/docker rm backup
-ExecStartPre=/usr/bin/docker pull debrouwere/pollster
-ExecStartPre=/usr/bin/curl \
-    -o /home/core/etcsnapshot \
-    https://raw.githubusercontent.com/debrouwere/pollster/master/pollster/etcsnapshot.sh
-ExecStartPre=/usr/bin/bash /home/core/etcsnapshot
 EnvironmentFile=/etc/environment
 ExecStart=/usr/bin/docker run \
     --name backup \
@@ -24,3 +18,6 @@ ExecStopPost=/usr/bin/docker run \
     --dimensions type=timer,container=backup \
     --value 1 \
     --unit Count
+
+[X-Fleet]
+MachineOf=heartbeat.service

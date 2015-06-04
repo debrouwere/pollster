@@ -2,19 +2,9 @@
 Description=fleet statistics
 
 [Service]
-TimeoutStartSec=600
 ExecStartPre=-/usr/bin/docker kill heartbeat
 ExecStartPre=-/usr/bin/docker rm heartbeat
-ExecStartPre=/usr/bin/docker pull debrouwere/pollster
-ExecStartPre=/usr/bin/curl \
-    -o /home/core/etcsnapshot \
-    https://raw.githubusercontent.com/debrouwere/pollster/master/pollster/etcsnapshot.sh
-ExecStartPre=/usr/bin/bash /home/core/etcsnapshot
 EnvironmentFile=/etc/environment
-ExecStartPre=/usr/bin/curl \
-    -o /home/core/etcsnapshot \
-    https://raw.githubusercontent.com/debrouwere/pollster/master/pollster/etcsnapshot.sh
-ExecStartPre=/usr/bin/bash /home/core/etcsnapshot
 ExecStart=/usr/bin/docker run \
     --name heartbeat \
     --env-file /etc/environment \
@@ -29,3 +19,6 @@ ExecStopPost=/usr/bin/docker run \
     --dimensions type=health,container=heartbeat \
     --value 1 \
     --unit Count
+
+[X-Fleet]
+Conflicts=redis.service

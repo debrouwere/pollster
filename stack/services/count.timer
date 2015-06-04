@@ -1,5 +1,6 @@
 [Unit]
 Description=pollster scheduler statistics
+Requires=update.service
 Requires=count.service
 
 [Timer]

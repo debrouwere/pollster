@@ -1,0 +1,9 @@
+[Unit]
+Description=Docker image updater timer
+Requires=update.service
+
+[Timer]
+OnCalendar=minutely
+
+[X-Fleet]
+Global=true

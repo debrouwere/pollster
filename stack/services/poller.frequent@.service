@@ -1,5 +1,6 @@
 [Unit]
 Description=frequent share count poller
+Requires=update.service
 
 [Service]
 Restart=always
@@ -7,11 +8,6 @@ RestartSec=60
 TimeoutStartSec=600
 ExecStartPre=-/usr/bin/docker kill poller.frequent
 ExecStartPre=-/usr/bin/docker rm poller.frequent
-ExecStartPre=/usr/bin/docker pull debrouwere/pollster
-ExecStartPre=/usr/bin/curl \
-    -o /home/core/etcsnapshot \
-    https://raw.githubusercontent.com/debrouwere/pollster/master/pollster/etcsnapshot.sh
-ExecStartPre=/usr/bin/bash /home/core/etcsnapshot
 EnvironmentFile=/etc/environment
 ExecStart=/usr/bin/docker run \
     --name poller.frequent \
@@ -36,5 +32,6 @@ ExecStopPost=/usr/bin/docker run \
     --unit Count
 
 [X-Fleet]
-X-Conflicts=poller.frequent@*.service
-X-Conflicts=scheduler.service
+Conflicts=poller.frequent@*.service
+Conflicts=scheduler.service
+Conflicts=heartbeat.service

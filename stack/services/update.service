@@ -1,0 +1,22 @@
+[Unit]
+Description=Docker image updater
+
+[Service]
+TimeoutStartSec=600
+RemainAfterExit=yes
+ExecStartPre=/usr/bin/curl \
+    -o /home/core/etcsnapshot \
+    https://raw.githubusercontent.com/debrouwere/pollster/master/pollster/etcsnapshot.sh
+ExecStartPre=/usr/bin/bash /home/core/etcsnapshot
+ExecStart=/usr/bin/docker pull debrouwere/pollster
+ExecStopPost=/usr/bin/docker run \
+    --env-file /tmp/etc/pollster \
+    --rm debrouwere/pollster aws cloudwatch put-metric-data \
+    --namespace social-shares \
+    --metric-name exec:stop \
+    --dimensions type=timer,container=update \
+    --value 1 \
+    --unit Count
+
+[X-Fleet]
+Global=true

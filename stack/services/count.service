@@ -2,19 +2,9 @@
 Description=scheduler statistics
 
 [Service]
-TimeoutStartSec=600
 ExecStartPre=-/usr/bin/docker kill count
 ExecStartPre=-/usr/bin/docker rm count
-ExecStartPre=/usr/bin/docker pull debrouwere/pollster
-ExecStartPre=/usr/bin/curl \
-    -o /home/core/etcsnapshot \
-    https://raw.githubusercontent.com/debrouwere/pollster/master/pollster/etcsnapshot.sh
-ExecStartPre=/usr/bin/bash /home/core/etcsnapshot
 EnvironmentFile=/etc/environment
-ExecStartPre=/usr/bin/curl \
-    -o /home/core/etcsnapshot \
-    https://raw.githubusercontent.com/debrouwere/pollster/master/pollster/etcsnapshot.sh
-ExecStartPre=/usr/bin/bash /home/core/etcsnapshot
 ExecStart=/usr/bin/docker run \
     --name count \
     --env-file /tmp/etc/pollster \
@@ -28,3 +18,6 @@ ExecStopPost=/usr/bin/docker run \
     --dimensions type=health,container=count \
     --value 1 \
     --unit Count
+
+[X-Fleet]
+MachineOf=heartbeat.service

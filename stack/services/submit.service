@@ -1,16 +1,11 @@
 [Unit]
 Description=article submitter
+Requires=update.service
 
 [Service]
-TimeoutStartSec=600
 ExecStartPre=-/usr/bin/docker kill submit
 ExecStartPre=-/usr/bin/docker rm submit
-ExecStartPre=/usr/bin/docker pull debrouwere/pollster
 EnvironmentFile=/etc/environment
-ExecStartPre=/usr/bin/curl \
-    -o /home/core/etcsnapshot \
-    https://raw.githubusercontent.com/debrouwere/pollster/master/pollster/etcsnapshot.sh
-ExecStartPre=/usr/bin/bash /home/core/etcsnapshot
 ExecStart=/usr/bin/docker run \
     --name submit \
     --env-file /tmp/etc/pollster \
@@ -24,3 +19,6 @@ ExecStopPost=/usr/bin/docker run \
     --dimensions type=timer,container=submit \
     --value 1 \
     --unit Count
+
+[X-Fleet]
+MachineOf=heartbeat.service

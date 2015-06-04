@@ -1,5 +1,6 @@
 [Unit]
 Description=pollster health checks
+Requires=update.service
 Requires=heartbeat.service
 
 [Timer]

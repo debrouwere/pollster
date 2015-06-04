@@ -1,16 +1,10 @@
 [Unit]
 Description=share count backup service
+Requires=update.service
 
 [Service]
-TimeoutStartSec=600
-TimeoutStopSec=1200
 ExecStartPre=-/usr/bin/docker kill summarize
 ExecStartPre=-/usr/bin/docker rm summarize
-ExecStartPre=/usr/bin/docker pull debrouwere/pollster
-ExecStartPre=/usr/bin/curl \
-    -o /home/core/etcsnapshot \
-    https://raw.githubusercontent.com/debrouwere/pollster/master/pollster/etcsnapshot.sh
-ExecStartPre=/usr/bin/bash /home/core/etcsnapshot
 EnvironmentFile=/etc/environment
 ExecStart=/usr/bin/docker run \
     --name summarize \
@@ -25,3 +19,6 @@ ExecStopPost=/usr/bin/docker run \
     --dimensions type=timer,container=summarize \
     --value 1 \
     --unit Count
+
+[X-Fleet]
+MachineOf=heartbeat.service

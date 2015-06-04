@@ -12,11 +12,6 @@ ExecStartPre=-/usr/bin/docker kill restore
 ExecStartPre=-/usr/bin/docker rm scheduler
 ExecStartPre=-/usr/bin/docker rm restore
 ExecStartPre=/usr/bin/docker pull debrouwere/jobs
-ExecStartPre=/usr/bin/docker pull debrouwere/pollster
-ExecStartPre=/usr/bin/curl \
-    -o /home/core/etcsnapshot \
-    https://raw.githubusercontent.com/debrouwere/pollster/master/pollster/etcsnapshot.sh
-ExecStartPre=/usr/bin/bash /home/core/etcsnapshot
 EnvironmentFile=/etc/environment
 ExecStart=/usr/bin/docker run \
     --name scheduler \
