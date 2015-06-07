@@ -11,7 +11,7 @@ def connect():
         fleet = sh.fleetctl.bake(
             tunnel=os.environ['FLEETCTL_TUNNEL_IPV4'])
     else:
-        endpoint = "http://{localhost}:2379/".format(
+        endpoint = "http://{localhost}:4001/".format(
             localhost=os.environ['COREOS_PRIVATE_IPV4'])
         fleet = sh.fleetctl.bake(endpoint=endpoint)
 

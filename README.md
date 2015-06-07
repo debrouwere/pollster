@@ -35,7 +35,7 @@ cd stack/services
 # onto each command that follows
 repl fleetctl --tunnel <machine>
 submit *.service *.timer
-start update
+start update.timer
 start redis
 start scheduler
 load backup submit summarize heartbeat count
