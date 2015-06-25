@@ -78,8 +78,8 @@ if __name__ == '__main__':
     counts = summarize(argv(1), argv(2))
     for filename, meta in counts.items():
         count, duration = meta
-        persistence.to_monitor('summarize', n=count)
-        persistence.to_monitor('summarize', unit='Seconds', n=duration)
+        persistence.to_monitor('summarize-n', n=count)
+        persistence.to_monitor('summarize-duration', unit='Seconds', n=duration)
         persistence.to_console("Saved share counts to S3: {filename} ({counts} rows in {s} seconds)", 
             filename=filename, 
             counts=count, 
