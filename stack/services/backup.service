@@ -1,7 +1,9 @@
 [Unit]
 Description=schedule backup service
+Requires=update.service
 
 [Service]
+Restart=on-failure
 ExecStartPre=-/usr/bin/docker kill backup
 ExecStartPre=-/usr/bin/docker rm backup
 EnvironmentFile=/etc/environment

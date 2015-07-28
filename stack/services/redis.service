@@ -6,9 +6,6 @@ Restart=always
 RestartSec=10
 TimeoutStartSec=600
 EnvironmentFile=/etc/environment
-ExecStartPre=/usr/bin/curl \
-    -o /home/core/etcsnapshot \
-    https://raw.githubusercontent.com/debrouwere/pollster/master/pollster/etcsnapshot.sh
 ExecStartPre=/usr/bin/bash /home/core/etcsnapshot
 ExecStartPre=-/usr/bin/docker kill redis
 ExecStartPre=-/usr/bin/docker rm redis

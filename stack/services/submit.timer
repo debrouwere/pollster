@@ -1,6 +1,5 @@
 [Unit]
 Description=article submitter timer
-Requires=submit.service
 
 [Timer]
 OnCalendar=*:0/1

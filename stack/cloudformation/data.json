@@ -1,5 +1,39 @@
 {
-  "AWSTemplateFormatVersion": "2010-09-09",
+  "Mappings": {
+    "RegionMap": {
+      "us-west-1": {
+        "AMI": "ami-bf8477fb"
+      },
+      "ap-northeast-1": {
+        "AMI": "ami-22d27b22"
+      },
+      "us-west-2": {
+        "AMI": "ami-f5a5a5c5"
+      },
+      "eu-central-1": {
+        "AMI": "ami-02211b1f"
+      },
+      "eu-west-1": {
+        "AMI": "ami-50f4b927"
+      },
+      "us-east-1": {
+        "AMI": "ami-6b1cd400"
+      },
+      "sa-east-1": {
+        "AMI": "ami-45a62a58"
+      },
+      "ap-southeast-2": {
+        "AMI": "ami-2b2e6911"
+      },
+      "ap-southeast-1": {
+        "AMI": "ami-0ef1f15c"
+      },
+      "us-gov-west-1": {
+        "AMI": "ami-e53a59c6"
+      }
+    }
+  },
+  "Description": "Pollster data stack",
   "Resources": {
     "SQSQueue": {
       "Properties": {
@@ -9,10 +43,17 @@
     },
     "DynamoDBTable": {
       "Properties": {
-        "ProvisionedThroughput": {
-          "ReadCapacityUnits": 10,
-          "WriteCapacityUnits": 10
-        },
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "url",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "timestamp",
+            "AttributeType": "N"
+          }
+        ],
+        "TableName": "social-shares",
         "KeySchema": [
           {
             "AttributeName": "url",
@@ -23,20 +64,13 @@
             "KeyType": "RANGE"
           }
         ],
-        "TableName": "social-shares",
-        "AttributeDefinitions": [
-          {
-            "AttributeName": "url",
-            "AttributeType": "S"
-          },
-          {
-            "AttributeName": "timestamp",
-            "AttributeType": "N"
-          }
-        ]
+        "ProvisionedThroughput": {
+          "ReadCapacityUnits": 10,
+          "WriteCapacityUnits": 10
+        }
       },
       "Type": "AWS::DynamoDB::Table"
     }
   },
-  "Description": "Pollster data stack"
+  "AWSTemplateFormatVersion": "2010-09-09"
 }

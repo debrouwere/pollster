@@ -1,6 +1,5 @@
 [Unit]
 Description=schedule backup service timer
-Requires=update.service
 Requires=backup.service
 
 [Timer]

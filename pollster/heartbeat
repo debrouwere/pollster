@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+import os
+
 from utils import fleet, persistence
 from datetime import datetime, timedelta
 from dateutil.parser import parse as parse_date
@@ -35,5 +37,6 @@ def cleanup():
 
 
 if __name__ == '__main__':
-    checkup()
     cleanup()
+    if os.environ.get('POLLSTER_VERBOSE'):
+        checkup()

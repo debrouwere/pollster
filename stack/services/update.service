@@ -2,6 +2,7 @@
 Description=Docker image updater
 
 [Service]
+Restart=on-failure
 TimeoutStartSec=600
 RemainAfterExit=yes
 ExecStartPre=/usr/bin/curl \

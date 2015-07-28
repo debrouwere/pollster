@@ -7,6 +7,10 @@ import yaml
 
 template = open('stack/cloudformation/{name}.yml'.format(name=sys.argv[1])).read()
 cloud_config = open('stack/cloudformation/cloud-config.yml').read()
-cloudformation_raw = template.format(cloud_config=cloud_config)
+amis = json.load(open('stack/cloudformation/coreos-stable-hvm.template'))
+cloudformation_raw = template.format(
+    cloud_config=cloud_config
+    )
 cloudformation = yaml.load(cloudformation_raw)
+cloudformation['Mappings'] = amis['Mappings']
 print(json.dumps(cloudformation, indent=2))

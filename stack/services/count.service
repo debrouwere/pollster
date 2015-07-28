@@ -1,7 +1,9 @@
 [Unit]
 Description=scheduler statistics
+Requires=update.service
 
 [Service]
+Restart=on-failure
 ExecStartPre=-/usr/bin/docker kill count
 ExecStartPre=-/usr/bin/docker rm count
 EnvironmentFile=/etc/environment

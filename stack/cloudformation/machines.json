@@ -1,72 +1,12 @@
 {
-  "Mappings": {
-    "RegionMap": {
-      "us-west-1": {
-        "ami": "ami-857a92c1"
-      },
-      "ap-southeast-2": {
-        "ami": "ami-7b85fc41"
-      },
-      "ap-southeast-1": {
-        "ami": "ami-da033b88"
-      },
-      "sa-east-1": {
-        "ami": "ami-d5b839c8"
-      },
-      "ap-northeast-1": {
-        "ami": "ami-9cc1119c"
-      },
-      "eu-central-1": {
-        "ami": "ami-f86b52e5"
-      },
-      "us-east-1": {
-        "ami": "ami-c36583a8"
-      },
-      "eu-west-1": {
-        "ami": "ami-e18cfc96"
-      },
-      "us-west-2": {
-        "ami": "ami-975f60a7"
-      }
-    }
-  },
-  "Parameters": {
-    "KeyPair": {
-      "Type": "String",
-      "Description": "The name of an existing EC2 Key Pair to allow SSH access to the instance."
-    },
-    "ClusterSize": {
-      "Type": "Number",
-      "Description": "Number of nodes in your cluster",
-      "Default": 3,
-      "MinValue": 3
-    },
-    "DiscoveryURL": {
-      "Type": "String",
-      "Description": "An unique etcd cluster discovery URL. Grab a new token from https://discovery.etcd.io/new"
-    }
-  },
   "Resources": {
-    "EtcdIngress4001": {
-      "Type": "AWS::EC2::SecurityGroupIngress",
-      "Properties": {
-        "IpProtocol": "tcp",
-        "SourceSecurityGroupId": {
-          "Fn::GetAtt": [
-            "CoreOSSecurityGroup",
-            "GroupId"
-          ]
-        },
-        "ToPort": 4001,
-        "GroupName": {
-          "Ref": "CoreOSSecurityGroup"
-        },
-        "FromPort": 4001
-      }
-    },
     "EtcdIngress2380": {
       "Type": "AWS::EC2::SecurityGroupIngress",
       "Properties": {
+        "GroupName": {
+          "Ref": "CoreOSSecurityGroup"
+        },
+        "FromPort": 2380,
         "IpProtocol": "tcp",
         "SourceSecurityGroupId": {
           "Fn::GetAtt": [
@@ -74,33 +14,72 @@
             "GroupId"
           ]
         },
-        "ToPort": 2380,
-        "GroupName": {
-          "Ref": "CoreOSSecurityGroup"
-        },
-        "FromPort": 2380
+        "ToPort": 2380
       }
     },
-    "EtcdIngress7001": {
-      "Type": "AWS::EC2::SecurityGroupIngress",
+    "CoreOSServerLaunchConfig": {
+      "Type": "AWS::AutoScaling::LaunchConfiguration",
       "Properties": {
-        "IpProtocol": "tcp",
-        "SourceSecurityGroupId": {
-          "Fn::GetAtt": [
-            "CoreOSSecurityGroup",
-            "GroupId"
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Join": [
+              "",
+              [
+                "#cloud-config\n\ncoreos:\n  update:\n    reboot-strategy: off\n  units:\n    - name: etcd2.service\n      command: start\n    - name: fleet.service\n      command: start\n  etcd:\n    addr: $private_ipv4:4001\n    peer-addr: $private_ipv4:7001\n    cluster-active-size: 5\n    cluster-remove-delay: 180.0\n    discovery: no\n  etcd2:\n    advertise-client-urls: http://$private_ipv4:2379\n    initial-advertise-peer-urls: http://$private_ipv4:2380\n    listen-client-urls: http://0.0.0.0:2379\n    listen-peer-urls: http://$private_ipv4:2380\n    discovery: ",
+                {
+                  "Ref": "DiscoveryURL"
+                }
+              ]
+            ]
+          }
+        },
+        "ImageId": {
+          "Fn::FindInMap": [
+            "RegionMap",
+            {
+              "Ref": "AWS::Region"
+            },
+            "AMI"
           ]
         },
-        "ToPort": 7001,
-        "GroupName": {
-          "Ref": "CoreOSSecurityGroup"
+        "KeyName": {
+          "Ref": "KeyPair"
         },
-        "FromPort": 7001
+        "SecurityGroups": [
+          {
+            "Ref": "CoreOSSecurityGroup"
+          }
+        ],
+        "InstanceType": "t2.micro"
+      }
+    },
+    "CoreOSSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "SecurityGroupIngress": [
+          {
+            "FromPort": 22,
+            "CidrIp": "0.0.0.0/0",
+            "IpProtocol": "tcp",
+            "ToPort": 22
+          },
+          {
+            "FromPort": 80,
+            "CidrIp": "0.0.0.0/0",
+            "IpProtocol": "tcp",
+            "ToPort": 80
+          }
+        ],
+        "GroupDescription": "Jobs"
       }
     },
     "EtcdIngress2379": {
       "Type": "AWS::EC2::SecurityGroupIngress",
       "Properties": {
+        "GroupName": {
+          "Ref": "CoreOSSecurityGroup"
+        },
+        "FromPort": 2379,
         "IpProtocol": "tcp",
         "SourceSecurityGroupId": {
           "Fn::GetAtt": [
@@ -108,31 +87,7 @@
             "GroupId"
           ]
         },
-        "ToPort": 2379,
-        "GroupName": {
-          "Ref": "CoreOSSecurityGroup"
-        },
-        "FromPort": 2379
-      }
-    },
-    "CoreOSUser": {
-      "Type": "AWS::IAM::User"
-    },
-    "RedisIngress6379": {
-      "Type": "AWS::EC2::SecurityGroupIngress",
-      "Properties": {
-        "IpProtocol": "tcp",
-        "SourceSecurityGroupId": {
-          "Fn::GetAtt": [
-            "CoreOSSecurityGroup",
-            "GroupId"
-          ]
-        },
-        "ToPort": 6379,
-        "GroupName": {
-          "Ref": "CoreOSSecurityGroup"
-        },
-        "FromPort": 6379
+        "ToPort": 2379
       }
     },
     "CoreOSAccessKey": {
@@ -143,9 +98,21 @@
         }
       }
     },
+    "CoreOSUser": {
+      "Type": "AWS::IAM::User"
+    },
     "CoreOSServerAutoScale": {
       "Type": "AWS::AutoScaling::AutoScalingGroup",
       "Properties": {
+        "AvailabilityZones": {
+          "Fn::GetAZs": {
+            "Ref": "AWS::Region"
+          }
+        },
+        "DesiredCapacity": {
+          "Ref": "ClusterSize"
+        },
+        "MaxSize": 10,
         "Tags": [
           {
             "Value": {
@@ -156,77 +123,113 @@
           }
         ],
         "MinSize": 3,
-        "AvailabilityZones": {
-          "Fn::GetAZs": {
-            "Ref": "AWS::Region"
-          }
-        },
-        "MaxSize": 10,
         "LaunchConfigurationName": {
           "Ref": "CoreOSServerLaunchConfig"
-        },
-        "DesiredCapacity": {
-          "Ref": "ClusterSize"
         }
       }
     },
-    "CoreOSSecurityGroup": {
-      "Type": "AWS::EC2::SecurityGroup",
+    "EtcdIngress4001": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
       "Properties": {
-        "GroupDescription": "Jobs",
-        "SecurityGroupIngress": [
-          {
-            "IpProtocol": "tcp",
-            "ToPort": 22,
-            "CidrIp": "0.0.0.0/0",
-            "FromPort": 22
-          },
-          {
-            "IpProtocol": "tcp",
-            "ToPort": 80,
-            "CidrIp": "0.0.0.0/0",
-            "FromPort": 80
-          }
-        ]
-      }
-    },
-    "CoreOSServerLaunchConfig": {
-      "Type": "AWS::AutoScaling::LaunchConfiguration",
-      "Properties": {
-        "ImageId": {
-          "Fn::FindInMap": [
-            "RegionMap",
-            {
-              "Ref": "AWS::Region"
-            },
-            "ami"
+        "GroupName": {
+          "Ref": "CoreOSSecurityGroup"
+        },
+        "FromPort": 4001,
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Fn::GetAtt": [
+            "CoreOSSecurityGroup",
+            "GroupId"
           ]
         },
-        "SecurityGroups": [
-          {
-            "Ref": "CoreOSSecurityGroup"
-          }
-        ],
-        "KeyName": {
-          "Ref": "KeyPair"
+        "ToPort": 4001
+      }
+    },
+    "EtcdIngress7001": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupName": {
+          "Ref": "CoreOSSecurityGroup"
         },
-        "InstanceType": "t2.micro",
-        "UserData": {
-          "Fn::Base64": {
-            "Fn::Join": [
-              "",
-              [
-                "#cloud-config\n\ncoreos:\n  update:\n    reboot-strategy: off\n  units:\n    - name: etcd.service\n      command: start\n    - name: fleet.service\n      command: start\n  etcd2:\n    advertise-client-urls: 'http://$private_ipv4:2379'\n    initial-advertise-peer-urls: 'http://$private_ipv4:2380'\n    listen-client-urls: 'http://0.0.0.0:2379,http://0.0.0.0:4001'\n    listen-peer-urls: 'http://$private_ipv4:2380,http://$private_ipv4:7001'\n  etcd:\n    addr: $private_ipv4:4001\n    peer-addr: $private_ipv4:7001\n    cluster-active-size: 5\n    cluster-remove-delay: 180.0\n    discovery: ",
-                {
-                  "Ref": "DiscoveryURL"
-                }
-              ]
-            ]
-          }
-        }
+        "FromPort": 7001,
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Fn::GetAtt": [
+            "CoreOSSecurityGroup",
+            "GroupId"
+          ]
+        },
+        "ToPort": 7001
+      }
+    },
+    "RedisIngress6379": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupName": {
+          "Ref": "CoreOSSecurityGroup"
+        },
+        "FromPort": 6379,
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Fn::GetAtt": [
+            "CoreOSSecurityGroup",
+            "GroupId"
+          ]
+        },
+        "ToPort": 6379
       }
     }
   },
   "Description": "Jobs stack",
-  "AWSTemplateFormatVersion": "2010-09-09"
+  "Parameters": {
+    "ClusterSize": {
+      "Default": 3,
+      "Description": "Number of nodes in your cluster",
+      "Type": "Number",
+      "MinValue": 3
+    },
+    "KeyPair": {
+      "Description": "The name of an existing EC2 Key Pair to allow SSH access to the instance.",
+      "Type": "String"
+    },
+    "DiscoveryURL": {
+      "Description": "An unique etcd2 cluster discovery URL. Grab a new token from https://discovery.etcd.io/new?size=n (Ignore the size parameter for etcd 0.4.x.)",
+      "Type": "String"
+    }
+  },
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Mappings": {
+    "RegionMap": {
+      "sa-east-1": {
+        "AMI": "ami-45a62a58"
+      },
+      "eu-central-1": {
+        "AMI": "ami-02211b1f"
+      },
+      "ap-southeast-2": {
+        "AMI": "ami-2b2e6911"
+      },
+      "us-gov-west-1": {
+        "AMI": "ami-e53a59c6"
+      },
+      "us-west-1": {
+        "AMI": "ami-bf8477fb"
+      },
+      "ap-northeast-1": {
+        "AMI": "ami-22d27b22"
+      },
+      "eu-west-1": {
+        "AMI": "ami-50f4b927"
+      },
+      "us-east-1": {
+        "AMI": "ami-6b1cd400"
+      },
+      "us-west-2": {
+        "AMI": "ami-f5a5a5c5"
+      },
+      "ap-southeast-1": {
+        "AMI": "ami-0ef1f15c"
+      }
+    }
+  }
 }
