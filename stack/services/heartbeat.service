@@ -4,6 +4,7 @@ Requires=update.service
 
 [Service]
 Restart=on-failure
+RestartSec=5min
 ExecStartPre=-/usr/bin/docker kill heartbeat
 ExecStartPre=-/usr/bin/docker rm heartbeat
 EnvironmentFile=/etc/environment
