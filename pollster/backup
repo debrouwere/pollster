@@ -10,7 +10,7 @@ from utils import persistence
 
 def backup():
     try:
-        board = jobs.Board(host=os.environ['JOBS_REDIS_HOST'])
+        board = jobs.Board(host=os.environ['JOBS_REDIS_HOST'], socket_connect_timeout=15)
         serialization = board.dump()
     except:
         raise IOError('Could not get job listing from Jobs. Redis or the scheduler might be offline.')

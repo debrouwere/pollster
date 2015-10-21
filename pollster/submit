@@ -12,7 +12,7 @@ from utils import request, split, traverse, persistence
 def submit(feed, path, update=False):
     feed = request(feed, json=True)
     urls = traverse(feed, path)
-    board = jobs.Board(host=os.environ['JOBS_REDIS_HOST'])
+    board = jobs.Board(host=os.environ['JOBS_REDIS_HOST'], socket_connect_timeout=15)
     updates = 0
     for url in urls:
         for schedule in ['frequent', 'careful']:
