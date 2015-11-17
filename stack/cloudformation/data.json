@@ -1,5 +1,11 @@
 {
   "Resources": {
+    "SQSQueue": {
+      "Type": "AWS::SQS::Queue",
+      "Properties": {
+        "QueueName": "social-shares"
+      }
+    },
     "DynamoDBTable": {
       "Type": "AWS::DynamoDB::Table",
       "Properties": {
@@ -13,6 +19,11 @@
             "AttributeType": "N"
           }
         ],
+        "TableName": "social-shares",
+        "ProvisionedThroughput": {
+          "ReadCapacityUnits": 10,
+          "WriteCapacityUnits": 10
+        },
         "KeySchema": [
           {
             "AttributeName": "url",
@@ -22,55 +33,44 @@
             "AttributeName": "timestamp",
             "KeyType": "RANGE"
           }
-        ],
-        "TableName": "social-shares",
-        "ProvisionedThroughput": {
-          "ReadCapacityUnits": 10,
-          "WriteCapacityUnits": 10
-        }
-      }
-    },
-    "SQSQueue": {
-      "Type": "AWS::SQS::Queue",
-      "Properties": {
-        "QueueName": "social-shares"
+        ]
       }
     }
   },
-  "AWSTemplateFormatVersion": "2010-09-09",
   "Mappings": {
     "RegionMap": {
-      "ap-southeast-1": {
-        "AMI": "ami-12060c40"
+      "eu-west-1": {
+        "AMI": "ami-55d20b26"
       },
       "us-east-1": {
-        "AMI": "ami-f396fa96"
-      },
-      "us-west-2": {
-        "AMI": "ami-99bfada9"
-      },
-      "sa-east-1": {
-        "AMI": "ami-632ba17e"
+        "AMI": "ami-37bdc15d"
       },
       "us-gov-west-1": {
-        "AMI": "ami-f1d1b2d2"
-      },
-      "us-west-1": {
-        "AMI": "ami-dbe71d9f"
-      },
-      "ap-northeast-1": {
-        "AMI": "ami-1e77ff1e"
+        "AMI": "ami-05bc0164"
       },
       "eu-central-1": {
-        "AMI": "ami-74bbba69"
+        "AMI": "ami-fdd4c791"
+      },
+      "ap-southeast-1": {
+        "AMI": "ami-da67a0b9"
+      },
+      "us-west-1": {
+        "AMI": "ami-27553a47"
+      },
+      "us-west-2": {
+        "AMI": "ami-00ebfc61"
       },
       "ap-southeast-2": {
-        "AMI": "ami-83f8b4b9"
+        "AMI": "ami-f35b0590"
       },
-      "eu-west-1": {
-        "AMI": "ami-83e9c8f4"
+      "ap-northeast-1": {
+        "AMI": "ami-84e0c7ea"
+      },
+      "sa-east-1": {
+        "AMI": "ami-154af179"
       }
     }
   },
-  "Description": "Pollster data stack"
+  "Description": "Pollster data stack",
+  "AWSTemplateFormatVersion": "2010-09-09"
 }
