@@ -1,6 +1,5 @@
 [Unit]
 Description=schedule backup service timer
-Requires=backup.service
 
 [Timer]
 OnCalendar=hourly

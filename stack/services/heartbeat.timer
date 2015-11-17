@@ -1,6 +1,5 @@
 [Unit]
 Description=pollster health checks
-Requires=heartbeat.service
 
 [Timer]
 OnCalendar=*:0/1

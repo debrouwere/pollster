@@ -21,4 +21,4 @@ ExecStopPost=/usr/bin/docker run \
     --unit Count
 
 [X-Fleet]
-MachineOf=heartbeat.service
+MachineOf=scheduler.service

@@ -1,6 +1,5 @@
 [Unit]
 Description=pollster scheduler statistics
-Requires=count.service
 
 [Timer]
 OnCalendar=*:0/1
