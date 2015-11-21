@@ -35,10 +35,11 @@ cd stack/services
 # onto each command that follows
 repl fleetctl --tunnel <machine>
 submit *.service *.timer
+load update
 start update.timer
 start redis
 start scheduler
-load backup submit summarize heartbeat count
+load backup submit heartbeat count
 start *.timer
 start poller.careful@{1..3}
 start poller.frequent@{1..3}

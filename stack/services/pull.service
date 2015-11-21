@@ -1,0 +1,15 @@
+[Unit]
+Description=Docker image updater
+
+[Service]
+Restart=on-failure
+TimeoutStartSec=600
+RemainAfterExit=yes
+ExecStartPre=/usr/bin/curl \
+    -o /home/core/etcsnapshot \
+    https://raw.githubusercontent.com/debrouwere/pollster/master/pollster/etcsnapshot.sh
+ExecStart=/usr/bin/docker pull debrouwere/pollster
+ExecStartPost=/usr/bin/bash /home/core/etcsnapshot
+
+[X-Fleet]
+Global=true

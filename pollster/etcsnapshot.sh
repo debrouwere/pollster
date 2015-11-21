@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-if [ `expr $(date +%s) - $(stat -c %Y /tmp/etc)` -lt 60 ] || [ -d '/tmp/etc.part' ];
+if [ -d '/tmp/etc' ] && [ `expr $(date +%s) - $(stat -c %Y /tmp/etc)` -lt 60 ];
 then
     exit
 fi

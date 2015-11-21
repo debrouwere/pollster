@@ -1,5 +1,5 @@
 [Unit]
-Description=Docker image updater timer
+Description=Etcd synchronization timer
 
 [Timer]
 OnCalendar=minutely

@@ -1,0 +1,8 @@
+[Unit]
+Description=Docker image updater timer
+
+[Timer]
+OnCalendar=hourly
+
+[X-Fleet]
+Global=true
