@@ -1,6 +1,7 @@
 [Unit]
 Description=frequent share count poller
-Requires=update.service
+Requires=deploy.service
+After=deploy.service
 
 [Service]
 Restart=always

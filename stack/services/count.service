@@ -1,6 +1,7 @@
 [Unit]
 Description=scheduler statistics
-Requires=update.service
+Requires=deploy.service
+After=deploy.service
 
 [Service]
 Restart=on-failure

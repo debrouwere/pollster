@@ -1,6 +1,7 @@
 [Unit]
 Description=article submitter
-Requires=update.service
+Requires=deploy.service
+After=deploy.service
 
 [Service]
 ExecStartPre=-/usr/bin/docker kill submit

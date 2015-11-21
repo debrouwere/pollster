@@ -1,9 +1,7 @@
 [Unit]
 Description=Docker image updater
-Requires=pull.service
 
 [Service]
-Restart=on-failure
 ExecStart=/usr/bin/bash /home/core/etcsnapshot
 
 [X-Fleet]

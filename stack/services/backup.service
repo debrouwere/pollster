@@ -1,6 +1,7 @@
 [Unit]
 Description=schedule backup service
-Requires=update.service
+Requires=deploy.service
+After=deploy.service
 
 [Service]
 Restart=on-failure
