@@ -66,7 +66,7 @@ def fetch(requested_platforms, meta):
         })
 
 schedules = {
-    'frequent': ['facebook', 'twitter'], 
+    'frequent': ['facebook'], 
     'careful': ['facebookfql', 'pinterest', 'linkedin', 'google'], 
 }
 
